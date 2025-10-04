@@ -1,0 +1,5 @@
+backend/.env
+backend/__pycache__/gee_urban_heat.cpython-313.pyc
+backend/__pycache__/irrigation.cpython-313.pyc
+backend/__pycache__/main.cpython-313.pyc
+backend/__pycache__/scraper.cpython-313.pyc
