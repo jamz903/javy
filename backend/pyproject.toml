@@ -1,0 +1,15 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "earthengine-api>=1.6.10",
+    "fastapi[standard]>=0.118.0",
+    "google-generativeai>=0.8.5",
+    "numpy>=2.3.3",
+    "python-dotenv>=1.1.1",
+    "rasterio>=1.4.3",
+    "sentinelhub>=3.11.2",
+]
