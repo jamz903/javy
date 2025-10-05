@@ -9,6 +9,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { useNavigate } from 'react-router';
+import { Separator } from '@/components/ui/separator';
 
 export default function About() {
   const navigate = useNavigate()
@@ -37,43 +38,39 @@ export default function About() {
 
   const team = [
     {
-      name: 'Dr. Sarah Chen',
-      role: 'CEO & Co-Founder',
-      background: 'Former NASA scientist with 15+ years in remote sensing',
-      image: '👩‍🔬'
+      name: 'Jamie',
+      role: 'Chef',
+      background: 'She cooks',
+      image: '👨‍🍳'
     },
     {
-      name: 'Marcus Rodriguez',
-      role: 'CTO & Co-Founder',
-      background: 'Ex-SpaceX engineer specializing in satellite systems',
-      image: '👨‍💻'
+      name: 'Yiqing',
+      role: 'Fisherman',
+      background: 'She baits',
+      image: '🚀'
     },
     {
-      name: 'Dr. Amara Okonkwo',
-      role: 'Chief Data Scientist',
-      background: 'PhD in Geospatial Analytics, published researcher',
-      image: '👩‍🎓'
+      name: 'Vayers',
+      role: 'VC',
+      background: 'Alex\'s favourite',
+      image: '🧙‍♀️'
     },
     {
-      name: 'James Liu',
-      role: 'Head of Engineering',
-      background: 'Led platform development at major tech companies',
-      image: '👨‍💼'
+      name: 'Amy',
+      role: 'Bed Tester',
+      background: 'Honk Shoo',
+      image: '😴'
     }
   ];
 
   const stats = [
-    { number: '50M+', label: 'API Calls per Month' },
-    { number: '120+', label: 'Countries Served' },
-    { number: '5', label: 'Satellite Data Sources' },
-    { number: '99.9%', label: 'Uptime SLA' }
+    { number: '10', label: 'API Calls per Month' },
+    { number: '1', label: 'Country Served' },
+    { number: '3', label: 'Satellite Data Sources' },
+    { number: '100%', label: 'Uptime SLA' }
   ];
 
   const faqs = [
-    {
-      question: 'When was the platform founded?',
-      answer: 'We were founded in 2019 by a team of space scientists and software engineers who wanted to make satellite data more accessible.'
-    },
     {
       question: 'What makes your platform different?',
       answer: 'We provide a unified API that aggregates multiple satellite data sources, making it as easy to work with as any modern web service. No need to navigate different providers and formats.'
@@ -84,26 +81,25 @@ export default function About() {
     },
     {
       question: 'How do you ensure data quality?',
-      answer: 'We work directly with official satellite data providers, implement rigorous validation processes, and maintain comprehensive documentation. Our 99.9% uptime SLA ensures reliability.'
-    }
-  ];
+      answer: 'We work directly with official satellite data providers, implement rigorous validation processes, and maintain comprehensive documentation.'
+    }];
 
   const handleViewDocumentation = () => {
     navigate('/documentation')
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50" >
       {/* Header */}
-      <div className="border-b bg-white">
+      < div className="border-b bg-white" >
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center gap-3 mb-2">
             <Satellite className="w-8 h-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-slate-900">About Us</h1>
           </div>
-          <p className="text-slate-600">Making satellite data accessible for everyone</p>
+          <p className="text-slate-600">Making satellite intelligence accessible for everyone</p>
         </div>
-      </div>
+      </div >
 
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
         {/* Stats Cards */}
@@ -125,25 +121,26 @@ export default function About() {
               <Globe className="w-5 h-5 text-blue-600" />
               <Badge variant="outline">Our Story</Badge>
             </div>
-            <CardTitle>Born from a Vision to Connect Earth and Data</CardTitle>
-            <CardDescription>
-              How we're making satellite data accessible to everyone
+            <CardTitle className='text-lg'>Born from a Vision to Make Space Data Usable</CardTitle>
+            <CardDescription className='text-md'>
+              How we're making satellite intelligence accessible for everyone
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-slate-700">
             <p>
-              Founded in 2019 by a team of space scientists and software engineers, our platform emerged
-              from a simple frustration: accessing satellite data was too complex, expensive, and fragmented.
+              Founded in 2025 by two business students and two computer science students passionate about Earth observation, LEONA was created to solve a growing problem: satellite data is abundant — but painfully hard to use.
             </p>
             <p>
-              We believed that groundbreaking insights about our planet shouldn't be locked behind
-              technical barriers. So we built a unified API platform that brings together data from
-              multiple satellite sources, making it as easy to work with as any modern web service.
+              We saw that while thousands of satellites capture terabytes of open data every day, only a fraction ever reaches the people who could turn it into action. Most of it remains trapped behind complex file formats, APIs, and technical know-how.
             </p>
             <p>
-              Today, we serve thousands of users across research institutions, government agencies,
-              NGOs, and commercial enterprises, helping them monitor deforestation, track urban growth,
-              assess crop health, respond to natural disasters, and much more.
+              LEONA changes that.
+              We built an AI native-language interface that lets anyone query satellite data in plain language and receive structured, ready-to-use outputs. It bridges the gap between orbital data and real-world application — empowering developers, researchers, and enterprises to build tools that monitor forests, optimise agriculture, plan cities, and much more.
+            </p>
+            <Separator />
+            <p className='font-semibold'>
+              Our mission is simple:
+              To bring space data down to Earth — making it usable, understandable, and open for innovation.
             </p>
           </CardContent>
         </Card>
@@ -177,7 +174,6 @@ export default function About() {
         <div>
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-slate-900 mb-2">Meet the Team</h2>
-            <p className="text-slate-600">Leadership committed to our mission</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {team.map((member, idx) => (
@@ -230,12 +226,9 @@ export default function About() {
               View Documentation
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
-            <Button className="bg-white text-blue-600 hover:bg-blue-50">
-              Contact Us
-            </Button>
           </CardContent>
         </Card>
       </div>
-    </div>
+    </div >
   );
 }

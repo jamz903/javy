@@ -1,4 +1,4 @@
-import { Menu, MessageSquare, Settings, Zap, DatabaseZap, Users, CirclePlus, Sparkles } from 'lucide-react';
+import { Menu, MessageSquare, Zap, DatabaseZap, Users, CirclePlus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Outlet, useNavigate } from 'react-router';
@@ -29,9 +29,6 @@ export default function MainLayout(): JSX.Element {
   }
   const handleDataSources = (): void => {
     handleNavigation('/documentation')
-  }
-  const handleSettings = (): void => {
-    handleNavigation('/settings')
   }
 
   const buttonStyles = isDarkBackground
@@ -110,13 +107,6 @@ export default function MainLayout(): JSX.Element {
                 <span className="text-left">Current APIs</span>
               </button>
 
-              <button
-                className="w-full flex items-center gap-3 p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 border border-blue-500/20 hover:border-blue-400/50 group"
-                onClick={handleSettings}
-              >
-                <Settings className="w-5 h-5 text-blue-400 group-hover:rotate-90 transition-transform duration-300" />
-                <span className="text-left">Settings</span>
-              </button>
             </div>
           </SheetContent>
         </Sheet>

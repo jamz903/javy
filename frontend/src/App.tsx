@@ -17,7 +17,6 @@ function App() {
         <Route path="/history" element={<History />} />
         <Route path="/documentation" element={<Documentation />} />
         <Route path="/chat" element={<Chat />} />
-        <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes >
   )
