@@ -73,15 +73,6 @@ async def post_process_api(evalscript: str, bbox: BoundingBox, from_time: str, t
     }
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
-    # --- VERBOSE LOGGING ---
-    print("\n===== Sentinel Hub Request Debug =====")
-    print(f"Collection: {collection}")
-    print(f"From: {from_time}, To: {to_time}")
-    print(f"BBox: {bbox}")
-    print(f"Payload JSON: {json.dumps(payload, indent=2)}")
-    print(f"Headers: {headers}")
-    print("====================================\n")
-
     try:
         async with httpx.AsyncClient(timeout=120) as client:
             r = await client.post(SENTINEL_HUB_PROCESS, json=payload, headers=headers)

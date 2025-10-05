@@ -345,11 +345,6 @@ async def call_satellite_api(api_endpoint: str, parameters: Dict) -> Optional[Di
                     "recent_end": str(parameters.get("recent_end")),
                 }
 
-                # Debug logging
-                print(f"DEBUG - Calling irrigation endpoint")
-                print(f"DEBUG - Payload: {payload}")
-                print(f"DEBUG - Query params: {query_params}")
-
             # Make the POST request to the endpoint
             response = await client.post(
                 f"http://localhost:8000{api_endpoint}",
