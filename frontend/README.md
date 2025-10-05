@@ -1,73 +1,44 @@
-# React + TypeScript + Vite
+# about
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Provides an interface for querying satellite data endpoints and visualizing real-time data from LEO satellites (Sentinel-1, Sentinel-2, Landsat 8/9). The interface translates natural language queries into API calls, processes the satellite data through an ML model, and presents the results in accessible, visual formats.
 
-Currently, two official plugins are available:
+## tech stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- React 19.1.1 + Vite + TypeScript
+- Tailwind CSS + shadcn/ui
+- Three.js + React Three Fiber + Drei + Post-processing
+- Recharts
 
-## React Compiler
+## prerequisites
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Node.js 18+ and npm 9+
+- Modern browser with WebGL support
 
-## Expanding the ESLint configuration
+## steps to get started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```
+git clone https://github.com/jamz903/javy.git
+cd frontend
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+npm install
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# for dev
+npm run dev
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# for prod
+npm run build
+npm un preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## features
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- landing page for new chats
+- chat history
+- API documentation
+- about us
+- more to come :)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## current supported data sources
+
+- Sentinel-1, Sentinel-2 (ESA)
+- Landsat 8/9 (NASA/USGS)
