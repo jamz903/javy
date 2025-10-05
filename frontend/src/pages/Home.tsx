@@ -11,7 +11,7 @@ import * as THREE from 'three'
 
 function SpaceStation({ url, scale = 1, position = [0, 0, 0] }) {
   const meshRef = useRef();
-  const { scene, materials } = useGLTF(url);
+  const { scene } = useGLTF(url);
 
   const clonedScene = useMemo(() => {
     const clone = scene.clone();
@@ -62,7 +62,6 @@ function SpaceStation({ url, scale = 1, position = [0, 0, 0] }) {
         const targetColor = colors[child.name];
 
         if (child.material) {
-          // Clone material to avoid affecting cached version
           child.material = child.material.clone();
 
           if (targetColor) {
@@ -119,7 +118,6 @@ function CameraRig() {
       const targetX = state.pointer.x * 3;
       const targetY = 2 + state.pointer.y * 2;
 
-      // Smooth damping for camera movement
       cameraRef.current.position.x = damp(cameraRef.current.position.x, targetX, 2, delta);
       cameraRef.current.position.y = damp(cameraRef.current.position.y, targetY, 2, delta);
 
@@ -129,8 +127,6 @@ function CameraRig() {
 
   return <PerspectiveCamera ref={cameraRef} makeDefault position={[0, 2, 8]} fov={60} />;
 }
-
-
 
 function Scene() {
   return (
@@ -155,13 +151,26 @@ function Scene() {
 
 export default function Home() {
   const [message, setMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async () => {
     if (message.trim() && !isLoading) {
+      const userMessage = message;
+      setMessage('');
       setIsLoading(true);
 
+      // Clear localStorage to reset chat history
+      localStorage.removeItem('chatMessages');
+
+      // Navigate immediately with the message
+      navigate('/chat', {
+        state: {
+          initialMessage: userMessage
+        }
+      });
+
+      // Send API request in background
       try {
         const response = await fetch('http://localhost:8000/api/chat', {
           method: 'POST',
@@ -169,7 +178,7 @@ export default function Home() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            message: message,
+            message: userMessage,
             conversation_history: [],
             execute_api: true
           })
@@ -180,25 +189,24 @@ export default function Home() {
         }
 
         const data = await response.json();
-        console.log('Response from API:', data);
 
-        // Navigate to chat page with the message and response
+        // Update the chat page with the response via navigation state
         navigate('/chat', {
           state: {
-            initialMessage: message,
+            initialMessage: userMessage,
             initialResponse: data
-          }
+          },
+          replace: true
         });
-
-        setMessage('');
       } catch (error) {
         console.error('Error sending message:', error);
-        // Still navigate to chat page even if API fails
+        // Navigate with error state
         navigate('/chat', {
           state: {
-            initialMessage: message,
+            initialMessage: userMessage,
             error: error.message
-          }
+          },
+          replace: true
         });
       } finally {
         setIsLoading(false);
@@ -214,15 +222,15 @@ export default function Home() {
   };
 
   const handleAbout = () => {
-    navigate('/about')
-  }
+    navigate('/about');
+  };
+
   const handleDocumentation = () => {
-    navigate('/documentation')
-  }
+    navigate('/documentation');
+  };
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
-      {/* 3D Background */}
       <div className="absolute inset-0">
         <Canvas
           camera={{ position: [0, 2, 8], fov: 60 }}
@@ -247,12 +255,9 @@ export default function Home() {
         </Canvas>
       </div>
 
-      {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/80 pointer-events-none" />
 
-      {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-between h-full px-6 py-12 pointer-events-none">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -270,7 +275,6 @@ export default function Home() {
           </p>
         </motion.div>
 
-        {/* Center Content */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -292,7 +296,6 @@ export default function Home() {
           </p>
         </motion.div>
 
-        {/* Chat Input */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -307,12 +310,14 @@ export default function Home() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
+                disabled={isLoading}
                 className="w-full bg-transparent border-none text-white placeholder:text-gray-400 text-lg px-6 py-6 pr-14 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <Button
                 onClick={handleSubmit}
+                disabled={isLoading}
                 size="icon"
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 rounded-xl h-10 w-10"
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 rounded-xl h-10 w-10 disabled:opacity-50"
               >
                 <Send className="w-5 h-5" />
               </Button>
