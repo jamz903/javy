@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import { useRef, useMemo, useState, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { PerspectiveCamera, Stars, useGLTF } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -11,7 +11,7 @@ import * as THREE from 'three'
 
 function SpaceStation({ url, scale = 1, position = [0, 0, 0] }) {
   const meshRef = useRef();
-  const { scene, materials } = useGLTF(url);
+  const { scene } = useGLTF(url);
 
   const clonedScene = useMemo(() => {
     const clone = scene.clone();
@@ -62,7 +62,6 @@ function SpaceStation({ url, scale = 1, position = [0, 0, 0] }) {
         const targetColor = colors[child.name];
 
         if (child.material) {
-          // Clone material to avoid affecting cached version
           child.material = child.material.clone();
 
           if (targetColor) {
@@ -71,12 +70,12 @@ function SpaceStation({ url, scale = 1, position = [0, 0, 0] }) {
 
           if (isEmitMesh) {
             child.material.emissive.set(targetColor || '#00ffff');
-            child.material.emissiveIntensity = 5.0;
+            child.material.emissiveIntensity = 7.0;
             child.material.metalness = 0.5;
             child.material.roughness = 1.0;
           } else {
             child.material.emissive.set('#1e40af');
-            child.material.emissiveIntensity = 0.2;
+            child.material.emissiveIntensity = 1;
             child.material.metalness = 0.3;
             child.material.roughness = 0.6;
           }
@@ -119,7 +118,6 @@ function CameraRig() {
       const targetX = state.pointer.x * 3;
       const targetY = 2 + state.pointer.y * 2;
 
-      // Smooth damping for camera movement
       cameraRef.current.position.x = damp(cameraRef.current.position.x, targetX, 2, delta);
       cameraRef.current.position.y = damp(cameraRef.current.position.y, targetY, 2, delta);
 
@@ -130,38 +128,89 @@ function CameraRig() {
   return <PerspectiveCamera ref={cameraRef} makeDefault position={[0, 2, 8]} fov={60} />;
 }
 
-
-
 function Scene() {
   return (
     <>
       <CameraRig />
-      <ambientLight intensity={5} />
+      <ambientLight intensity={6} />
       <pointLight position={[10, 10, 10]} intensity={2} />
       <pointLight position={[-10, -10, -10]} intensity={1} color="#4a90e2" />
       <spotLight position={[0, 10, 0]} intensity={1.5} angle={0.6} penumbra={1} />
       <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
 
-      <React.Suspense fallback={null}>
+      <Suspense fallback={null}>
         <SpaceStation
           url="/space_station.glb"
           scale={0.5}
           position={[0, 0, 0]}
         />
-      </React.Suspense>
+      </Suspense>
     </>
   );
 }
 
 export default function Home() {
-  const [message, setMessage] = React.useState('');
+  const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = () => {
-    if (message.trim()) {
-      console.log('Message sent:', message);
+  const handleSubmit = async () => {
+    if (message.trim() && !isLoading) {
+      const userMessage = message;
       setMessage('');
-      navigate('/chat')
+      setIsLoading(true);
+
+      // Clear localStorage to reset chat history
+      localStorage.removeItem('chatMessages');
+
+      // Navigate immediately with the message
+      navigate('/chat', {
+        state: {
+          initialMessage: userMessage
+        }
+      });
+
+      // Send API request in background
+      try {
+        const response = await fetch('http://localhost:8000/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: userMessage,
+            conversation_history: [],
+            execute_api: true
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to send message');
+        }
+
+        const data = await response.json();
+
+        // Update the chat page with the response via navigation state
+        navigate('/chat', {
+          state: {
+            initialMessage: userMessage,
+            initialResponse: data
+          },
+          replace: true
+        });
+      } catch (error) {
+        console.error('Error sending message:', error);
+        // Navigate with error state
+        navigate('/chat', {
+          state: {
+            initialMessage: userMessage,
+            error: error.message
+          },
+          replace: true
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -173,15 +222,15 @@ export default function Home() {
   };
 
   const handleAbout = () => {
-    navigate('/about')
-  }
+    navigate('/about');
+  };
+
   const handleDocumentation = () => {
-    navigate('/documentation')
-  }
+    navigate('/documentation');
+  };
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
-      {/* 3D Background */}
       <div className="absolute inset-0">
         <Canvas
           camera={{ position: [0, 2, 8], fov: 60 }}
@@ -197,7 +246,7 @@ export default function Home() {
           <Scene />
           <EffectComposer>
             <Bloom
-              intensity={2.0}
+              intensity={3.0}
               luminanceThreshold={0.2}
               luminanceSmoothing={0.9}
               mipmapBlur
@@ -206,12 +255,9 @@ export default function Home() {
         </Canvas>
       </div>
 
-      {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/80 pointer-events-none" />
 
-      {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-between h-full px-6 py-12 pointer-events-none">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -229,7 +275,6 @@ export default function Home() {
           </p>
         </motion.div>
 
-        {/* Center Content */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -238,17 +283,19 @@ export default function Home() {
           onClick={handleDocumentation}
         >
           <h2 className="text-6xl md:text-7xl font-bold text-white mb-6 leading-tight transition-transform duration-300 ease-in-out group-hover:scale-105 cursor-pointer">
-            Bringing The Stars
-            <span className="block bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-              Down To You
+            Bringing Space
+            <span className="block bg-gradient-to-r from-blue-400 to-violet-600 bg-clip-text text-transparent">
+              Down To Earth
             </span>
           </h2>
           <p className="text-gray-300 text-lg md:text-xl mb-8 opacity-80 transition-all duration-300 group-hover:opacity-60 group-hover:scale-95">
-            Harness the power of AI to navigate the cosmos
+            Harness the power of
+            <span className='bg-gradient-to-r from-blue-400 to-violet-500 bg-clip-text text-transparent'>
+              &nbsp;space
+            </span>
           </p>
         </motion.div>
 
-        {/* Chat Input */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -263,12 +310,14 @@ export default function Home() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
+                disabled={isLoading}
                 className="w-full bg-transparent border-none text-white placeholder:text-gray-400 text-lg px-6 py-6 pr-14 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <Button
                 onClick={handleSubmit}
+                disabled={isLoading}
                 size="icon"
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 rounded-xl h-10 w-10"
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 rounded-xl h-10 w-10 disabled:opacity-50"
               >
                 <Send className="w-5 h-5" />
               </Button>
