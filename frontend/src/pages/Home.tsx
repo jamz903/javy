@@ -136,7 +136,7 @@ function Scene() {
       <pointLight position={[10, 10, 10]} intensity={2} />
       <pointLight position={[-10, -10, -10]} intensity={1} color="#4a90e2" />
       <spotLight position={[0, 10, 0]} intensity={1.5} angle={0.6} penumbra={1} />
-      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+      <Stars radius={100} depth={40} count={5000} factor={4} saturation={0} fade speed={1} />
 
       <Suspense fallback={null}>
         <SpaceStation
