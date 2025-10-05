@@ -1,3 +1,4 @@
+// AI was used to help write this function to validate logic and suggest improvements
 import { useRef, useMemo, useState, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { PerspectiveCamera, Stars, useGLTF } from '@react-three/drei';

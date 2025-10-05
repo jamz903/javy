@@ -1,5 +1,6 @@
+// AI was used to help write this function to validate logic and suggest improvements
 import { useState, useEffect } from 'react';
-import { Search, Code, Copy, Check, ChevronDown, Satellite, AlertCircle } from 'lucide-react';
+import { Search, Copy, Check, ChevronDown, AlertCircle, Zap } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,6 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 
-// Parse OpenAPI spec and organize into data sources
 const parseOpenAPISpec = (spec) => {
   if (!spec || !spec.paths) return [];
 
@@ -170,7 +170,7 @@ export default function Documentation() {
       <div className="border-b bg-white">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center gap-3 mb-2">
-            <Satellite className="w-8 h-8 text-blue-600" />
+            <Zap className="w-8 h-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-slate-900">API Documentation</h1>
           </div>
           <p className="text-slate-600">Satellite imagery analysis and environmental monitoring APIs</p>
