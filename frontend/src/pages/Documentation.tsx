@@ -1,3 +1,4 @@
+// AI was used to help write this function to validate logic and suggest improvements
 import { useState, useEffect } from 'react';
 import { Search, Copy, Check, ChevronDown, AlertCircle, Zap } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -12,7 +13,6 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 
-// Parse OpenAPI spec and organize into data sources
 const parseOpenAPISpec = (spec) => {
   if (!spec || !spec.paths) return [];
 

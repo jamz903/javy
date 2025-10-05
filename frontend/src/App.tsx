@@ -5,7 +5,6 @@ import Home from './pages/Home'
 import Documentation from './pages/Documentation'
 import Chat from './pages/Chat'
 import About from './pages/About'
-import Settings from './pages/Settings'
 import History from './pages/History'
 
 function App() {

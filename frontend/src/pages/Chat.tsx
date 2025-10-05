@@ -1,5 +1,6 @@
+// AI was used to help write this function to validate logic and suggest improvements
 import { useState, useRef, useEffect } from 'react';
-import { Send, Satellite, User, Bot, ChevronDown, ChevronUp, AlertCircle, CheckCircle, Info, BarChart3, Download } from 'lucide-react';
+import { Send, Satellite, User, Bot, ChevronDown, ChevronUp, AlertCircle, CheckCircle, Info, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -20,7 +21,6 @@ export default function Chat() {
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
-  // Initialize messages based on loaded chat or new chat
   useEffect(() => {
     if (isInitialized) return;
 
@@ -844,16 +844,9 @@ export default function Chat() {
     const apiResults = data.api_results;
     const apiUsed = analysis?.technical_context?.api_used;
     const responseText = data.response || '';
+    const hasAlternativeApplications = data.metadata?.alternative_applications;
 
-    if (!analysis && !responseText && data.metadata?.understanding) {
-      return (
-        <div className="text-md text-slate-700 leading-relaxed">
-          {formatText(data.metadata.understanding)}
-        </div>
-      );
-    }
-
-    if (!analysis) {
+    if (!analysis && !hasAlternativeApplications) {
       return <div className="text-md text-slate-700 leading-relaxed">{formatText(responseText)}</div>;
     }
 
@@ -862,6 +855,15 @@ export default function Chat() {
         {responseText && (
           <div className="text-md text-slate-700 leading-relaxed">
             {formatText(responseText)}
+          </div>
+        )}
+        {data?.recommended_apis && data.recommended_apis.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {data.recommended_apis.map((api, idx) => (
+              <div key={idx} className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-lg border border-slate-200 w-fit">
+                <code className="text-xs font-mono text-slate-700">{api.api_endpoint}</code>
+              </div>
+            ))}
           </div>
         )}
 
@@ -892,26 +894,43 @@ export default function Chat() {
           </Card>
         )}
 
-        {analysis.key_takeaways && (
+        {(analysis?.key_takeaways) && (
           <Card className="border-l-4 border-l-blue-500 bg-blue-50">
             <CardContent className="pt-4">
-              <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-blue-600" />
-                Key Findings
-              </h3>
-              <ul className="space-y-2">
-                {analysis.key_takeaways.map((takeaway, idx) => (
-                  <li key={idx} className="text-sm text-slate-700 flex items-start gap-2">
-                    <span className="mt-0.5">•</span>
-                    <span>{takeaway}</span>
-                  </li>
-                ))}
-              </ul>
+              <button
+                onClick={() => toggleSection(message.id, 'key-findings')}
+                className="w-full flex items-center justify-between text-left hover:opacity-80"
+              >
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-blue-600" />
+                  Key Findings
+                </h3>
+                {expandedSections[`${message.id}-key-findings`] ? (
+                  <ChevronUp className="w-5 h-5 text-slate-400" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-slate-400" />
+                )}
+              </button>
+
+              {expandedSections[`${message.id}-key-findings`] && (
+                <div className="mt-4 space-y-4">
+                  {analysis.key_takeaways && (
+                    <ul className="space-y-2">
+                      {analysis.key_takeaways.map((takeaway, idx) => (
+                        <li key={idx} className="text-sm text-slate-700 flex items-start gap-2">
+                          <span className="mt-0.5">•</span>
+                          <span>{takeaway}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
 
-        {analysis.recommendations && (
+        {analysis?.recommendations && (
           <Card className="bg-amber-50 border-amber-200">
             <CardContent className="pt-4">
               <button
@@ -939,6 +958,75 @@ export default function Chat() {
                           <li key={idx} className="text-sm text-slate-700 ml-4">• {action}</li>
                         ))}
                       </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {(analysis?.limitations || hasAlternativeApplications || data.metadata?.alternative_applications != []) && (
+          <Card className="bg-purple-50 border-purple-200">
+            <CardContent className="pt-4">
+              <button
+                onClick={() => toggleSection(message.id, 'context-alternatives')}
+                className="w-full flex items-center justify-between text-left hover:opacity-80"
+              >
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <Info className="w-5 h-5 text-purple-600" />
+                  Context & Alternatives
+                </h3>
+                {expandedSections[`${message.id}-context-alternatives`] ? (
+                  <ChevronUp className="w-5 h-5 text-slate-400" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-slate-400" />
+                )}
+              </button>
+
+              {expandedSections[`${message.id}-context-alternatives`] && (
+                <div className="mt-4 space-y-4">
+                  {analysis?.limitations && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-800 mb-2">Limitations</h4>
+                      <div className="text-sm text-slate-700 leading-relaxed">
+                        {formatText(analysis?.limitations)}
+                      </div>
+                    </div>
+                  )}
+                  {hasAlternativeApplications && data.metadata?.alternative_applications != [] && (
+                    <div className={analysis?.limitations ? "pt-4 border-t border-purple-200" : ""}>
+                      <h4 className="text-sm font-semibold text-slate-800 mb-2">Alternative Applications</h4>
+                      <div className="text-sm text-slate-700 leading-relaxed space-y-4">
+                        {Array.isArray(data.metadata.alternative_applications) ? (
+                          data.metadata.alternative_applications.map((app, idx) => (
+                            <div key={idx} className="bg-white rounded-lg p-4 border border-purple-200">
+                              {typeof app === 'object' && app.title ? (
+                                <>
+                                  <h5 className="font-semibold text-slate-900 mb-2">{app.title}</h5>
+                                  {app.description && (
+                                    <p className="text-sm text-slate-700 mb-2">{app.description}</p>
+                                  )}
+                                  {app.research_basis && (
+                                    <p className="text-xs text-slate-600 italic mt-2">
+                                      <strong>Research:</strong> {app.research_basis}
+                                    </p>
+                                  )}
+                                  {app.implementation_note && (
+                                    <p className="text-xs text-slate-600 mt-2">
+                                      <strong>Note:</strong> {app.implementation_note}
+                                    </p>
+                                  )}
+                                </>
+                              ) : (
+                                <p>{typeof app === 'string' ? app : JSON.stringify(app)}</p>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          formatText(data.metadata.alternative_applications)
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

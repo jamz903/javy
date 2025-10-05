@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+// AI was used to help write this function to validate logic and suggest improvements
+import { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Search, Calendar, Trash2, MoreVertical, Star, StarOff, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -27,11 +28,9 @@ export default function History() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteId, setDeleteId] = useState(null);
-  const fileInputRef = useRef(null);
   const [chats, setChats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load chat history from backend on mount
   useEffect(() => {
     const loadHistory = async () => {
       setIsLoading(true);
@@ -52,7 +51,6 @@ export default function History() {
     loadHistory();
   }, []);
 
-  // Handle chat click to open the conversation
   const handleChatClick = (chat) => {
     navigate('/chat', {
       state: {

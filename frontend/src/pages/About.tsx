@@ -1,4 +1,5 @@
-import { Satellite, Globe, Users, Target, Award, Zap, ArrowRight } from 'lucide-react';
+// AI was used to help write this function to validate logic and suggest improvements
+import { Globe, Users, Target, Award, Zap, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

@@ -1,4 +1,5 @@
-import { Menu, MessageSquare, Zap, DatabaseZap, Users, CirclePlus, Sparkles } from 'lucide-react';
+// AI was used to help write this function to validate logic and suggest improvements
+import { Menu, MessageSquare, Zap, Users, CirclePlus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Outlet, useNavigate } from 'react-router';
@@ -25,9 +26,6 @@ export default function MainLayout(): JSX.Element {
     handleNavigation('/about')
   }
   const handleCurrentAPIs = (): void => {
-    handleNavigation('/documentation')
-  }
-  const handleDataSources = (): void => {
     handleNavigation('/documentation')
   }
 
