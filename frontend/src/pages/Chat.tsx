@@ -1,91 +1,58 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Send, Satellite, User, Bot, ChevronDown, ChevronUp, AlertCircle, CheckCircle, Info, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
+import { useLocation } from 'react-router';
 
 export default function Chat() {
-  const sampleApiResponse = {
-    "response": "The analysis of your farm in Bygdøyveien, Oslo, comparing the last month to the month prior, shows no significant areas of crop stress or changes in water content based on the thresholds used. While there's no immediate cause for concern detected, some slight variations in vegetation indices and radar backscatter were observed. These results should be taken as a baseline, and continued monitoring is recommended to identify any developing issues.\n\nWe used satellite data to check for changes in your crops' health by comparing the past month (September 4, 2025 to October 4, 2025) to the month before (August 4, 2025 to September 4, 2025). We looked at two key indicators: NDWI (Normalized Difference Water Index) which tells us about water content in the plants and surrounding area, and VV (vertical-transmit, vertical-receive) which is a measure of radar backscatter that can indicate changes in the vegetation structure.",
-    "api_results": {
-      "pixels_detected": 0,
-      "area_detected_km2": 0,
-      "pixel_area_km2": 2.1028254136749684e-7,
-      "delta_ndwi_stats": {
-        "mean": -0.05216680094599724,
-        "std": 0.017849156633019447,
-        "max": 0.010025233030319214,
-        "min": -0.1047334372997284
-      },
-      "delta_vv_db_stats": {
-        "mean": 0.8186769485473633,
-        "std": 5.136748790740967,
-        "max": 16.309886932373047,
-        "min": -19.964181900024414
-      },
-      "ndwi_threshold": 0.05,
-      "vv_db_threshold": 1,
-      "confidence_fraction": 0,
-      "resolution": {
-        "width": 512,
-        "height": 512
-      }
-    },
-    "metadata": {
-      "results_analysis": {
-        "key_takeaways": [
-          "✓ No significant crop stress or changes in water content were detected on your farm in the past month based on the thresholds used.",
-          "ℹ️ A slight decrease in average NDWI suggests a minor reduction in water content, but it's within a normal range and requires further monitoring.",
-          "ℹ️ A slight increase in VV radar backscatter could indicate growth or changes in vegetation structure, but it could also be influenced by other factors."
-        ],
-        "recommendations": {
-          "immediate_actions": [
-            "Continue to visually inspect your crops for any signs of stress or disease.",
-            "Monitor weather conditions and adjust irrigation as needed."
-          ],
-          "monitoring_plan": "Run this analysis again in one month to track any changes in crop health over time. Pay attention to any significant deviations in NDWI or VV values.",
-          "follow_up_suggestions": "Consider using higher-resolution imagery or drone-based monitoring for a more detailed assessment of crop health if you suspect any localized issues."
-        },
-        "technical_context": {
-          "api_used": "Agricultural Health Monitoring (/irrigation/detect)",
-          "area_analyzed": "Approximately 0.002 km2 (based on bbox), with a resolution of 512x512 pixels.",
-          "time_periods": "Reference period: 2025-08-04 to 2025-09-04; Recent period: 2025-09-04 to 2025-10-04",
-          "key_thresholds": "NDWI threshold: 0.05; VV threshold: 1.0",
-          "confidence_metrics": "Confidence fraction: 0.0"
-        }
-      }
-    }
-  };
+  const location = useLocation();
+  const { initialMessage, initialResponse, error } = location.state || {};
 
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      role: 'assistant',
-      content: 'Hello! I\'m your satellite data assistant. I can help you analyze crop health, search for satellite imagery, and answer questions about agricultural monitoring. What would you like to know?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 5)
-    },
-    {
-      id: 2,
-      role: 'user',
-      content: 'Can you analyze the health of my crops at Bygdøyveien, Oslo for the past month?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 4)
-    },
-    {
-      id: 3,
-      role: 'assistant',
-      content: sampleApiResponse,
-      timestamp: new Date(Date.now() - 1000 * 60 * 3),
-      type: 'analysis'
+  const [messages, setMessages] = useState(() => {
+    const baseMessages = [
+      {
+        id: 1,
+        role: 'assistant',
+        content: 'Hello! I\'m your satellite data assistant. I can help you analyze crop health, search for satellite imagery, and answer questions about agricultural monitoring. What would you like to know?',
+        timestamp: new Date(Date.now() - 1000 * 60 * 5)
+      }
+    ];
+
+    // Add initial message and response if they exist
+    if (initialMessage) {
+      baseMessages.push({
+        id: 2,
+        role: 'user',
+        content: initialMessage,
+        timestamp: new Date(Date.now() - 1000 * 60 * 1)
+      });
+
+      if (initialResponse) {
+        baseMessages.push({
+          id: 3,
+          role: 'assistant',
+          content: initialResponse,
+          timestamp: new Date(),
+          type: initialResponse.metadata?.results_analysis ? 'analysis' : 'text'
+        });
+      } else if (error) {
+        baseMessages.push({
+          id: 3,
+          role: 'assistant',
+          content: `I encountered an error processing your request: ${error}. Please try again.`,
+          timestamp: new Date()
+        });
+      }
     }
-  ]);
+
+    return baseMessages;
+  });
+
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [expandedSections, setExpandedSections] = useState({
-    '3-recommendations': true,
-    '3-technical': false,
-    '3-visualizations': true
-  });
+  const [expandedSections, setExpandedSections] = useState({});
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -104,8 +71,8 @@ export default function Chat() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
+    if (!input.trim() || isTyping) return;
 
     const userMessage = {
       id: messages.length + 1,
@@ -114,7 +81,8 @@ export default function Chat() {
       timestamp: new Date()
     };
 
-    setMessages([...messages, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
     setIsTyping(true);
 
@@ -122,16 +90,69 @@ export default function Chat() {
       textareaRef.current.style.height = 'auto';
     }
 
-    setTimeout(() => {
+    try {
+      // Build conversation history - only include actual conversation messages, not the initial greeting
+      const conversationHistory = messages
+        .filter(msg => msg.id > 1) // Skip the initial assistant greeting
+        .map(msg => {
+          let content = msg.content;
+          // Extract just the text content for conversation history
+          if (typeof content === 'object' && content.response) {
+            content = content.response;
+          }
+          return {
+            role: msg.role,
+            content: content
+          };
+        });
+
+      console.log('Sending request with history:', conversationHistory);
+
+      const response = await fetch('http://localhost:8000/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: currentInput,
+          conversation_history: conversationHistory,
+          execute_api: true
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`API returned ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Received response:', data);
+
       const aiMessage = {
         id: messages.length + 2,
         role: 'assistant',
-        content: 'I\'m processing your request. This is a demo response showing how the AI would reply to your query about satellite data.',
+        content: data,
+        timestamp: new Date(),
+        type: data.metadata?.results_analysis ? 'analysis' : 'text'
+      };
+
+      console.log('Adding AI message:', aiMessage);
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+
+      const errorMessage = {
+        id: messages.length + 2,
+        role: 'assistant',
+        content: `I encountered an error processing your request: ${error.message}. Please try again or check if the API server is running.`,
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, aiMessage]);
+
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -324,44 +345,148 @@ export default function Chat() {
     );
   };
 
-  const renderImagerySearch = (apiResults, messageId) => {
-    // Placeholder for imagery search visualization
+  const renderDeforestationMonitoring = (apiResults, messageId) => {
+    // For deforestation detection using NDVI and NBR indices
     return (
-      <div className="bg-white rounded-lg p-4 border border-blue-200">
-        <h4 className="text-sm font-semibold text-slate-800 mb-3">
-          Imagery Search Results
-        </h4>
-        <p className="text-sm text-slate-600">
-          Visualization for imagery search results would go here (e.g., thumbnails, map view, timeline).
-        </p>
-      </div>
+      <>
+        {/* Detection Summary */}
+        <SummaryStatsCards stats={[
+          { value: apiResults.pixels_detected || 0, label: 'Deforestation Pixels' },
+          { value: (apiResults.area_detected_km2 || 0).toFixed(3), label: 'Area Detected (km²)' },
+          { value: `${((apiResults.confidence_fraction || 0) * 100).toFixed(1)}%`, label: 'Confidence' }
+        ]} />
+
+        {/* NDVI Change Statistics */}
+        {apiResults.delta_ndvi_stats && (
+          <div className="bg-white rounded-lg p-4 border border-green-200">
+            <h4 className="text-sm font-semibold text-slate-800 mb-3">
+              NDVI (Vegetation Health) Change Distribution
+            </h4>
+            <DistributionRange
+              stats={apiResults.delta_ndvi_stats}
+              threshold={apiResults.ndvi_threshold || 0.1}
+              label="NDVI Change"
+              color="bg-green"
+              bidirectionalThreshold={false}
+            />
+            <p className="text-xs text-slate-600 mt-2">
+              NDVI measures vegetation health. Negative changes indicate vegetation loss. The red line shows the deforestation detection threshold.
+            </p>
+          </div>
+        )}
+
+        {/* NBR Change Statistics */}
+        {apiResults.delta_nbr_stats && (
+          <div className="bg-white rounded-lg p-4 border border-red-200">
+            <h4 className="text-sm font-semibold text-slate-800 mb-3">
+              NBR (Burn Index) Change Distribution
+            </h4>
+            <DistributionRange
+              stats={apiResults.delta_nbr_stats}
+              threshold={apiResults.nbr_threshold || 0.1}
+              label="NBR Change"
+              color="bg-red"
+              bidirectionalThreshold={false}
+            />
+            <p className="text-xs text-slate-600 mt-2">
+              NBR is sensitive to burned areas and vegetation changes. Negative changes may indicate deforestation or fire damage.
+            </p>
+          </div>
+        )}
+
+        {/* Analysis Details */}
+        {apiResults.resolution && (
+          <div className="bg-white rounded-lg p-3 border border-green-200 text-xs text-slate-600">
+            <span className="font-semibold">Analysis Resolution:</span> {apiResults.resolution.width} × {apiResults.resolution.height} pixels
+            {apiResults.pixel_area_km2 && (
+              <>
+                <span className="mx-2">•</span>
+                <span className="font-semibold">Pixel Size:</span> {(apiResults.pixel_area_km2 * 1000000).toFixed(2)} m²
+              </>
+            )}
+          </div>
+        )}
+      </>
     );
   };
 
-  const renderChangeDetection = (apiResults, messageId) => {
-    // Placeholder for change detection visualization
+  const renderUrbanHeatIsland = (apiResults, messageId) => {
+    // For urban heat island analysis using Land Surface Temperature
     return (
-      <div className="bg-white rounded-lg p-4 border border-amber-200">
-        <h4 className="text-sm font-semibold text-slate-800 mb-3">
-          Change Detection Results
-        </h4>
-        <p className="text-sm text-slate-600">
-          Visualization for change detection would go here (e.g., before/after comparison, change heatmap).
-        </p>
-      </div>
+      <>
+        {/* Temperature Summary */}
+        {apiResults.lst_stats && (
+          <SummaryStatsCards stats={[
+            { value: `${apiResults.lst_stats.mean.toFixed(1)}°C`, label: 'Mean Temperature' },
+            { value: `${apiResults.lst_stats.max.toFixed(1)}°C`, label: 'Max Temperature' },
+            { value: `${apiResults.lst_stats.min.toFixed(1)}°C`, label: 'Min Temperature' }
+          ]} />
+        )}
+
+        {/* LST Distribution */}
+        {apiResults.lst_stats && (
+          <div className="bg-white rounded-lg p-4 border border-orange-200">
+            <h4 className="text-sm font-semibold text-slate-800 mb-3">
+              Land Surface Temperature (LST) Distribution
+            </h4>
+            <DistributionRange
+              stats={apiResults.lst_stats}
+              threshold={apiResults.heat_threshold || 35}
+              label="Temperature"
+              color="bg-orange"
+              unit="°C"
+              bidirectionalThreshold={false}
+            />
+            <p className="text-xs text-slate-600 mt-2">
+              The orange bar shows typical temperature range. The red line marks the heat island threshold. Higher temperatures indicate urban heat islands.
+            </p>
+          </div>
+        )}
+
+        {/* Heat Island Intensity */}
+        {apiResults.heat_island_intensity !== undefined && (
+          <div className="bg-white rounded-lg p-4 border border-red-200">
+            <h4 className="text-sm font-semibold text-slate-800 mb-3">
+              Urban Heat Island Intensity
+            </h4>
+            <div className="flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-5xl font-bold text-orange-600">
+                  {apiResults.heat_island_intensity.toFixed(1)}°C
+                </div>
+                <p className="text-sm text-slate-600 mt-2">
+                  Temperature difference between urban and surrounding areas
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Analysis Details */}
+        {apiResults.resolution && (
+          <div className="bg-white rounded-lg p-3 border border-orange-200 text-xs text-slate-600">
+            <span className="font-semibold">Analysis Resolution:</span> {apiResults.resolution.width} × {apiResults.resolution.height} pixels
+            {apiResults.scene_date && (
+              <>
+                <span className="mx-2">•</span>
+                <span className="font-semibold">Scene Date:</span> {apiResults.scene_date}
+              </>
+            )}
+          </div>
+        )}
+      </>
     );
   };
 
   // MAIN VISUALIZATION ROUTER
   const renderVisualization = (apiUsed, apiResults, messageId) => {
-    if (apiUsed.includes('Agricultural Health Monitoring')) {
+    if (apiUsed.includes('Agricultural Health Monitoring') || apiUsed.includes('/irrigation/detect')) {
       return renderAgriculturalHealthMonitoring(apiResults, messageId);
     } else if (apiUsed.includes('Imagery Search')) {
       return renderImagerySearch(apiResults, messageId);
     } else if (apiUsed.includes('Change Detection')) {
       return renderChangeDetection(apiResults, messageId);
     }
-    // Default fallback
     return (
       <div className="bg-white rounded-lg p-4 border border-slate-200">
         <p className="text-sm text-slate-600">No visualization available for this API type.</p>
@@ -369,23 +494,86 @@ export default function Chat() {
     );
   };
 
+  const formatText = (text) => {
+    if (!text) return null;
+
+    const lines = text.split('\n');
+    return lines.map((line, idx) => {
+      // Check for headers with **text**
+      if (line.includes('**')) {
+        const parts = line.split('**');
+        return (
+          <div key={idx} className="mb-2">
+            {parts.map((part, i) => {
+              if (i % 2 === 1) {
+                return <strong key={i} className="font-semibold text-slate-900">{part}</strong>;
+              }
+              return <span key={i}>{part}</span>;
+            })}
+          </div>
+        );
+      }
+
+      // Check for separators (---)
+      if (line.trim() === '---') {
+        return <hr key={idx} className="my-4 border-slate-300" />;
+      }
+
+      // Check for italic text with *text*
+      if (line.includes('*') && !line.includes('**')) {
+        const parts = line.split('*');
+        return (
+          <div key={idx} className="mb-2">
+            {parts.map((part, i) => {
+              if (i % 2 === 1) {
+                return <em key={i} className="italic text-slate-600">{part}</em>;
+              }
+              return <span key={i}>{part}</span>;
+            })}
+          </div>
+        );
+      }
+
+      // Regular line
+      return line ? <div key={idx} className="mb-2">{line}</div> : <div key={idx} className="mb-2">&nbsp;</div>;
+    });
+  };
+
   // MAIN MESSAGE RENDERER
   const renderAnalysisMessage = (message) => {
     const data = message.content;
+
+    // Handle simple text responses
+    if (typeof data === 'string') {
+      return <div className="text-md text-slate-700 leading-relaxed">{formatText(data)}</div>;
+    }
+
     const analysis = data.metadata?.results_analysis;
     const apiResults = data.api_results;
     const apiUsed = analysis?.technical_context?.api_used;
+    const responseText = data.response || '';
+
+    // If no analysis and no response text, show understanding from metadata
+    if (!analysis && !responseText && data.metadata?.understanding) {
+      return (
+        <div className="text-md text-slate-700 leading-relaxed">
+          {formatText(data.metadata.understanding)}
+        </div>
+      );
+    }
 
     if (!analysis) {
-      return <div className="text-md text-slate-700 leading-relaxed whitespace-pre-wrap">{data.response}</div>;
+      return <div className="text-md text-slate-700 leading-relaxed">{formatText(responseText)}</div>;
     }
 
     return (
       <div className="space-y-4">
         {/* Summary */}
-        <div className="text-md text-slate-700 leading-relaxed">
-          {data.response.split('\n\n')[0]}
-        </div>
+        {responseText && (
+          <div className="text-md text-slate-700 leading-relaxed">
+            {responseText}
+          </div>
+        )}
 
         {/* Data Visualizations */}
         {apiResults && apiUsed && (
@@ -561,10 +749,12 @@ export default function Chat() {
                 </div>
                 {message.type === 'analysis' ? (
                   renderAnalysisMessage(message)
-                ) : (
+                ) : typeof message.content === 'string' ? (
                   <div className="text-md text-slate-700 leading-relaxed whitespace-pre-wrap">
                     {message.content}
                   </div>
+                ) : (
+                  renderAnalysisMessage(message)
                 )}
               </div>
             </div>
@@ -607,7 +797,7 @@ export default function Chat() {
             />
             <Button
               onClick={handleSend}
-              disabled={!input.trim()}
+              disabled={!input.trim() || isTyping}
               size="icon"
               className="h-[56px] w-[56px] shrink-0 transition-all duration-200 hover:scale-105"
             >

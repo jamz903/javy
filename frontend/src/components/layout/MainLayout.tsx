@@ -111,14 +111,6 @@ export default function MainLayout(): JSX.Element {
               </button>
 
               <button
-                className="w-full flex items-center gap-3 p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 border border-green-500/20 hover:border-blue-400/50 group"
-                onClick={handleDataSources}
-              >
-                <DatabaseZap className="w-5 h-5 text-green-400 group-hover:scale-110 transition-transform duration-300" />
-                <span className="text-left">Our Data Sources</span>
-              </button>
-
-              <button
                 className="w-full flex items-center gap-3 p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 border border-blue-500/20 hover:border-blue-400/50 group"
                 onClick={handleSettings}
               >

@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import { useRef, useMemo, useState, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { PerspectiveCamera, Stars, useGLTF } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -71,12 +71,12 @@ function SpaceStation({ url, scale = 1, position = [0, 0, 0] }) {
 
           if (isEmitMesh) {
             child.material.emissive.set(targetColor || '#00ffff');
-            child.material.emissiveIntensity = 5.0;
+            child.material.emissiveIntensity = 7.0;
             child.material.metalness = 0.5;
             child.material.roughness = 1.0;
           } else {
             child.material.emissive.set('#1e40af');
-            child.material.emissiveIntensity = 0.2;
+            child.material.emissiveIntensity = 1;
             child.material.metalness = 0.3;
             child.material.roughness = 0.6;
           }
@@ -136,32 +136,73 @@ function Scene() {
   return (
     <>
       <CameraRig />
-      <ambientLight intensity={5} />
+      <ambientLight intensity={6} />
       <pointLight position={[10, 10, 10]} intensity={2} />
       <pointLight position={[-10, -10, -10]} intensity={1} color="#4a90e2" />
       <spotLight position={[0, 10, 0]} intensity={1.5} angle={0.6} penumbra={1} />
       <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
 
-      <React.Suspense fallback={null}>
+      <Suspense fallback={null}>
         <SpaceStation
           url="/space_station.glb"
           scale={0.5}
           position={[0, 0, 0]}
         />
-      </React.Suspense>
+      </Suspense>
     </>
   );
 }
 
 export default function Home() {
-  const [message, setMessage] = React.useState('');
+  const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate();
 
-  const handleSubmit = () => {
-    if (message.trim()) {
-      console.log('Message sent:', message);
-      setMessage('');
-      navigate('/chat')
+  const handleSubmit = async () => {
+    if (message.trim() && !isLoading) {
+      setIsLoading(true);
+
+      try {
+        const response = await fetch('http://localhost:8000/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: message,
+            conversation_history: [],
+            execute_api: true
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to send message');
+        }
+
+        const data = await response.json();
+        console.log('Response from API:', data);
+
+        // Navigate to chat page with the message and response
+        navigate('/chat', {
+          state: {
+            initialMessage: message,
+            initialResponse: data
+          }
+        });
+
+        setMessage('');
+      } catch (error) {
+        console.error('Error sending message:', error);
+        // Still navigate to chat page even if API fails
+        navigate('/chat', {
+          state: {
+            initialMessage: message,
+            error: error.message
+          }
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -197,7 +238,7 @@ export default function Home() {
           <Scene />
           <EffectComposer>
             <Bloom
-              intensity={2.0}
+              intensity={3.0}
               luminanceThreshold={0.2}
               luminanceSmoothing={0.9}
               mipmapBlur
@@ -238,13 +279,16 @@ export default function Home() {
           onClick={handleDocumentation}
         >
           <h2 className="text-6xl md:text-7xl font-bold text-white mb-6 leading-tight transition-transform duration-300 ease-in-out group-hover:scale-105 cursor-pointer">
-            Bringing The Stars
-            <span className="block bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-              Down To You
+            Bringing Space
+            <span className="block bg-gradient-to-r from-blue-400 to-violet-600 bg-clip-text text-transparent">
+              Down To Earth
             </span>
           </h2>
           <p className="text-gray-300 text-lg md:text-xl mb-8 opacity-80 transition-all duration-300 group-hover:opacity-60 group-hover:scale-95">
-            Harness the power of AI to navigate the cosmos
+            Harness the power of
+            <span className='bg-gradient-to-r from-blue-400 to-violet-500 bg-clip-text text-transparent'>
+              &nbsp;space
+            </span>
           </p>
         </motion.div>
 
