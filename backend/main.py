@@ -12,12 +12,172 @@ import httpx
 from scraper import router as satellite_router, BoundingBox
 from irrigation import router as irrigation_router
 from datetime import date, datetime, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Initialize FastAPI
 load_dotenv()
 app = FastAPI(title="LEONA API", version="1.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(satellite_router)
 app.include_router(irrigation_router)
+
+# Gemini API keys with fallback
+GEMINI_KEYS = [
+    os.getenv("GEMINI_API_KEY"),
+    os.getenv("GEMINI_API_KEY_ALT"),
+    os.getenv("GEMINI_API_KEY_BACKUP"),
+]
+
+# Track current key index
+_current_gemini_idx = 0
+
+
+def get_gemini_model(model_name: str = "gemini-2.0-flash-exp", **kwargs):
+    """
+    Get a Gemini model with automatic fallback on quota errors.
+    Returns a wrapper that will try fallback keys on quota errors.
+    """
+    return _GeminiModelWithFallback(model_name, **kwargs)
+
+
+class _GeminiModelWithFallback:
+    """Wrapper that tries fallback API keys when quota is exceeded."""
+    
+    def __init__(self, model_name: str, **model_kwargs):
+        self.model_name = model_name
+        self.model_kwargs = model_kwargs
+        self._current_key_idx = _current_gemini_idx
+        self._configure_current_key()
+    
+    def _configure_current_key(self):
+        """Configure Gemini with the current key."""
+        key = GEMINI_KEYS[self._current_key_idx]
+        if not key:
+            raise RuntimeError(f"Gemini API key at index {self._current_key_idx} is not set")
+        genai.configure(api_key=key)
+        self._model = genai.GenerativeModel(model_name=self.model_name, **self.model_kwargs)
+    
+    def _is_quota_error(self, e: Exception) -> bool:
+        """Check if exception is a quota/rate limit error."""
+        error_str = str(e).lower()
+        return any(term in error_str for term in [
+            "quota", "resource exhausted", "rate limit", "429", "insufficient tokens"
+        ])
+    
+    def start_chat(self, **kwargs):
+        """Start a chat session with automatic fallback support."""
+        return _ChatSessionWithFallback(self, **kwargs)
+    
+    def generate_content(self, *args, **kwargs):
+        """Generate content with automatic fallback on quota errors."""
+        global _current_gemini_idx
+        
+        attempts = []
+        start_idx = self._current_key_idx
+        
+        for i in range(len(GEMINI_KEYS)):
+            idx = (start_idx + i) % len(GEMINI_KEYS)
+            
+            if not GEMINI_KEYS[idx]:
+                continue
+            
+            try:
+                if idx != self._current_key_idx:
+                    self._current_key_idx = idx
+                    self._configure_current_key()
+                
+                result = self._model.generate_content(*args, **kwargs)
+                
+                # Success! Update global index
+                _current_gemini_idx = idx
+                if i > 0:
+                    logger.info(f"Gemini generation succeeded with key {idx} after {i} attempts")
+                
+                return result
+                
+            except Exception as e:
+                if self._is_quota_error(e):
+                    logger.warning(f"Gemini key {idx} quota exceeded, trying next...")
+                    attempts.append(f"Key {idx}: quota exceeded")
+                    continue
+                else:
+                    # Non-quota error, raise immediately
+                    raise
+        
+        raise RuntimeError(
+            f"All Gemini API keys failed or exceeded quota. Attempts: {', '.join(attempts)}"
+        )
+    
+    def __getattr__(self, name):
+        """Delegate other methods to the underlying model."""
+        return getattr(self._model, name)
+
+
+class _ChatSessionWithFallback:
+    """Wrapper for chat sessions with automatic fallback support."""
+    
+    def __init__(self, model_wrapper: _GeminiModelWithFallback, **kwargs):
+        self.model_wrapper = model_wrapper
+        self.kwargs = kwargs
+        self._session = model_wrapper._model.start_chat(**kwargs)
+    
+    def send_message(self, *args, **kwargs):
+        """Send message with automatic fallback on quota errors."""
+        global _current_gemini_idx
+        
+        attempts = []
+        start_idx = self.model_wrapper._current_key_idx
+        
+        for i in range(len(GEMINI_KEYS)):
+            idx = (start_idx + i) % len(GEMINI_KEYS)
+            
+            if not GEMINI_KEYS[idx]:
+                continue
+            
+            try:
+                if idx != self.model_wrapper._current_key_idx:
+                    self.model_wrapper._current_key_idx = idx
+                    self.model_wrapper._configure_current_key()
+                    # Restart chat session with new key
+                    self._session = self.model_wrapper._model.start_chat(**self.kwargs)
+                
+                result = self._session.send_message(*args, **kwargs)
+                
+                # Success! Update global index
+                _current_gemini_idx = idx
+                if i > 0:
+                    logger.info(f"Gemini chat succeeded with key {idx} after {i} attempts")
+                
+                return result
+                
+            except Exception as e:
+                if self.model_wrapper._is_quota_error(e):
+                    logger.warning(f"Gemini key {idx} quota exceeded, trying next...")
+                    attempts.append(f"Key {idx}: quota exceeded")
+                    continue
+                else:
+                    raise
+        
+        raise RuntimeError(
+            f"All Gemini API keys failed or exceeded quota. Attempts: {', '.join(attempts)}"
+        )
+
+
+def _validate_gemini_credentials():
+    """Validate that at least one API key exists."""
+    if not any(k for k in GEMINI_KEYS if k):
+        logger.warning("No Gemini API keys configured")
+
+_validate_gemini_credentials()
+
 
 # Geocoding helper function
 async def geocode_location(location_string: str) -> Optional[BoundingBox]:
@@ -199,9 +359,6 @@ async def call_satellite_api(api_endpoint: str, parameters: Dict) -> Optional[Di
             "traceback": traceback.format_exc()
         }
     
-# Configure Gemini
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
 # API endpoint mapping
 API_MAP = {
     "deforestation": {"endpoint": "/satellite/deforestation", "name": "Deforestation Detection"},
@@ -513,7 +670,7 @@ class UserQuery(BaseModel):
     scene_date: Optional[date] = None
 
 # Initialize Gemini model with system instructions
-model = genai.GenerativeModel(
+model = get_gemini_model(
     model_name="gemini-2.0-flash-exp",
     system_instruction=SYSTEM_PROMPT,
     generation_config={
@@ -690,6 +847,7 @@ async def chat(request: ChatRequest):
             elif not request.execute_api and recommended_apis:
                 # If we didn't execute, explain what would happen
                 final_response += "To run this analysis, set `execute_api: true` in your request."
+            
             return ChatResponse(
                 response=final_response,
                 recommended_apis=recommended_apis,

@@ -9,6 +9,9 @@ from dotenv import load_dotenv
 from sentinelhub import DataCollection
 import ee
 from gee_urban_heat import get_landsat_urban_heat_gee
+import logging
+
+logger = logging.getLogger(__name__)
 
 try:
     ee.Initialize()
@@ -18,12 +21,85 @@ except Exception as e:
 
 router = APIRouter(prefix="/satellite", tags=["satellite"])
 
-# --- Sentinel Hub config ---
+# --- Load environment variables ---
 load_dotenv()
-SENTINEL_HUB_OAUTH = os.getenv("SENTINEL_HUB_OAUTH", "https://services.sentinel-hub.com/oauth/token")
+
+# --- Sentinel Hub config ---
+SENTINEL_HUB_OAUTH = "https://services.sentinel-hub.com/oauth/token"
 SENTINEL_HUB_PROCESS = os.getenv("SENTINEL_HUB_PROCESS", "https://services.sentinel-hub.com/api/v1/process")
-SENTINEL_CLIENT_ID = os.getenv("SENTINEL_HUB_CLIENT_ID")
-SENTINEL_CLIENT_SECRET = os.getenv("SENTINEL_HUB_CLIENT_SECRET")
+
+# Sentinel Hub credentials with fallback
+SENTINEL_CREDS = [
+    (os.getenv("SENTINEL_HUB_CLIENT_ID"), os.getenv("SENTINEL_HUB_CLIENT_SECRET")),
+    (os.getenv("SENTINEL_HUB_CLIENT_ID_ALT"), os.getenv("SENTINEL_HUB_CLIENT_SECRET_ALT")),
+    (os.getenv("SENTINEL_HUB_CLIENT_ID_FALLBACK"), os.getenv("SENTINEL_HUB_CLIENT_SECRET_BACKUP"))
+]
+
+# Track current credential index
+_current_sentinel_idx = 0
+
+
+async def get_sentinel_token() -> str:
+    """Get Sentinel Hub token with automatic fallback on quota/bandwidth errors."""
+    global _current_sentinel_idx
+    
+    attempts = []
+    start_idx = _current_sentinel_idx
+    
+    for i in range(len(SENTINEL_CREDS)):
+        idx = (start_idx + i) % len(SENTINEL_CREDS)
+        client_id, client_secret = SENTINEL_CREDS[idx]
+        
+        if not client_id or not client_secret:
+            continue
+            
+        data = {
+            "grant_type": "client_credentials",
+            "client_id": client_id,
+            "client_secret": client_secret
+        }
+        
+        async with httpx.AsyncClient(timeout=30) as client:
+            try:
+                r = await client.post(SENTINEL_HUB_OAUTH, data=data)
+                r.raise_for_status()
+                
+                # Success! Update current index for next call
+                _current_sentinel_idx = idx
+                if i > 0:
+                    logger.info(f"Sentinel Hub token acquired with credential set {idx} after {i} attempts")
+                return r.json()["access_token"]
+                
+            except httpx.HTTPStatusError as e:
+                # Check for quota/bandwidth errors
+                is_quota_error = (
+                    e.response.status_code in (429, 403) and 
+                    any(term in e.response.text.lower() for term in ["bandwidth", "quota", "rate limit"])
+                )
+                
+                if is_quota_error:
+                    logger.warning(f"Sentinel credential set {idx} exceeded quota, trying next...")
+                    attempts.append(f"Cred {idx}: {e.response.status_code}")
+                    continue
+                else:
+                    # Non-quota error, raise immediately
+                    raise
+            except Exception as e:
+                logger.error(f"Sentinel credential set {idx} failed: {e}")
+                attempts.append(f"Cred {idx}: {str(e)}")
+                continue
+    
+    raise RuntimeError(
+        f"All Sentinel Hub credentials failed or exceeded quota. Attempts: {', '.join(attempts)}"
+    )
+
+
+def _validate_sentinel_credentials():
+    """Validate that at least one set of credentials exists."""
+    if not any(cid and csec for cid, csec in SENTINEL_CREDS):
+        logger.warning("No Sentinel Hub credentials configured")
+
+_validate_sentinel_credentials()
 
 
 # === Shared helpers ===
@@ -33,18 +109,6 @@ class BoundingBox(BaseModel):
     max_lon: float
     max_lat: float
 
-async def get_sentinel_token() -> str:
-    if not SENTINEL_CLIENT_ID or not SENTINEL_CLIENT_SECRET:
-        raise RuntimeError("Sentinel Hub credentials missing.")
-    data = {
-        "grant_type": "client_credentials",
-        "client_id": SENTINEL_CLIENT_ID,
-        "client_secret": SENTINEL_CLIENT_SECRET
-    }
-    async with httpx.AsyncClient(timeout=30) as client:
-        r = await client.post(SENTINEL_HUB_OAUTH, data=data)
-        r.raise_for_status()
-        return r.json()["access_token"]
 
 def bbox_to_geojson_polygon(bbox: BoundingBox) -> Dict:
     return {
@@ -57,6 +121,7 @@ def bbox_to_geojson_polygon(bbox: BoundingBox) -> Dict:
             [bbox.min_lon, bbox.min_lat]
         ]]
     }
+
 
 async def post_process_api(evalscript: str, bbox: BoundingBox, from_time: str, to_time: str,
                            width: int = 512, height: int = 512, collection: str = "sentinel-2-l2a",
