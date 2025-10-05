@@ -160,7 +160,6 @@ export default function Home() {
       setMessage('');
       setIsLoading(true);
 
-      // Clear localStorage to reset chat history
       localStorage.removeItem('chatMessages');
 
       // Navigate immediately with the message

@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { MessageSquare, Search, Calendar, Trash2, MoreVertical, Star, StarOff } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { MessageSquare, Search, Calendar, Trash2, MoreVertical, Star, StarOff, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,90 +24,43 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function History() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteId, setDeleteId] = useState(null);
-  const [chats, setChats] = useState([
-    {
-      id: 1,
-      title: 'Sentinel-2 imagery over Amazon rainforest',
-      preview: 'Can you help me find high-resolution Sentinel-2 imagery covering the Amazon rainforest from the past 3 months?',
-      date: '2024-10-03',
-      timestamp: '2:30 PM',
-      messages: 12,
-      starred: true,
-      tags: ['Sentinel-2', 'Amazon']
-    },
-    {
-      id: 2,
-      title: 'MODIS vegetation index analysis',
-      preview: 'I need to calculate NDVI from MODIS data for agricultural monitoring in Kenya...',
-      date: '2024-10-02',
-      timestamp: '11:15 AM',
-      messages: 8,
-      starred: false,
-      tags: ['MODIS', 'NDVI']
-    },
-    {
-      id: 3,
-      title: 'Landsat change detection',
-      preview: 'How can I perform change detection using Landsat 8 imagery to track urban expansion?',
-      date: '2024-10-01',
-      timestamp: '4:45 PM',
-      messages: 15,
-      starred: true,
-      tags: ['Landsat', 'Urban']
-    },
-    {
-      id: 4,
-      title: 'SAR interferometry tutorial',
-      preview: 'Could you explain how to create an interferogram using Sentinel-1 SAR data?',
-      date: '2024-09-30',
-      timestamp: '9:20 AM',
-      messages: 20,
-      starred: false,
-      tags: ['SAR', 'InSAR']
-    },
-    {
-      id: 5,
-      title: 'Planet Labs API integration',
-      preview: 'I want to integrate Planet Labs API into my application for daily imagery updates...',
-      date: '2024-09-29',
-      timestamp: '3:10 PM',
-      messages: 6,
-      starred: false,
-      tags: ['Planet Labs', 'API']
-    },
-    {
-      id: 6,
-      title: 'Cloud masking techniques',
-      preview: 'What are the best practices for cloud masking in optical satellite imagery?',
-      date: '2024-09-28',
-      timestamp: '1:55 PM',
-      messages: 10,
-      starred: true,
-      tags: ['Cloud Masking', 'Processing']
-    },
-    {
-      id: 7,
-      title: 'Time series analysis',
-      preview: 'Help me set up a time series analysis workflow for monitoring crop health...',
-      date: '2024-09-27',
-      timestamp: '10:30 AM',
-      messages: 18,
-      starred: false,
-      tags: ['Time Series', 'Agriculture']
-    },
-    {
-      id: 8,
-      title: 'Download Sentinel-2 bands',
-      preview: 'How do I download specific bands from Sentinel-2 scenes?',
-      date: '2024-09-26',
-      timestamp: '5:20 PM',
-      messages: 5,
-      starred: false,
-      tags: ['Sentinel-2', 'Download']
-    }
-  ]);
+  const fileInputRef = useRef(null);
+  const [chats, setChats] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load chat history from backend on mount
+  useEffect(() => {
+    const loadHistory = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch('http://localhost:8000/api/chat-history');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.chats) {
+            setChats(data.chats);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadHistory();
+  }, []);
+
+  // Handle chat click to open the conversation
+  const handleChatClick = (chat) => {
+    navigate('/chat', {
+      state: {
+        loadedChat: chat,
+        chatId: chat.id
+      }
+    });
+  };
 
   const filteredChats = chats.filter(chat =>
     chat.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -140,31 +94,72 @@ export default function History() {
     return groups;
   }, {});
 
-  const toggleStar = (id) => {
-    setChats(chats.map(chat =>
+  const toggleStar = async (id) => {
+    // Update locally first for immediate feedback
+    const updatedChats = chats.map(chat =>
       chat.id === id ? { ...chat, starred: !chat.starred } : chat
-    ));
+    );
+    setChats(updatedChats);
+
+    // Save to backend
+    try {
+      await fetch('http://localhost:8000/api/chat-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chats: updatedChats })
+      });
+    } catch (error) {
+      console.error('Error saving star status:', error);
+    }
   };
 
   const confirmDelete = (id) => {
     setDeleteId(id);
   };
 
-  const deleteChat = () => {
-    setChats(chats.filter(chat => chat.id !== deleteId));
-    setDeleteId(null);
+  const deleteChat = async () => {
+    try {
+      // Delete from backend
+      const response = await fetch(`http://localhost:8000/api/chat-history/${deleteId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        // Update local state
+        setChats(chats.filter(chat => chat.id !== deleteId));
+      }
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+    } finally {
+      setDeleteId(null);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading chat history...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <div className="border-b bg-white">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-3 mb-2">
-            <MessageSquare className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-slate-900">Chat History</h1>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <MessageSquare className="w-8 h-8 text-blue-600" />
+                <h1 className="text-3xl font-bold text-slate-900">Chat History</h1>
+              </div>
+              <p className="text-slate-600">View and manage your past conversations</p>
+            </div>
           </div>
-          <p className="text-slate-600">View and manage your past conversations</p>
         </div>
       </div>
 
@@ -225,9 +220,11 @@ export default function History() {
               <MessageSquare className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-slate-900 mb-2">No chats found</h3>
               <p className="text-slate-600 mb-4">
-                Try adjusting your search or start a new conversation
+                {chats.length === 0
+                  ? 'Start a conversation to see your chat history here'
+                  : 'Try adjusting your search terms'}
               </p>
-              <Button>Start New Chat</Button>
+              <Button onClick={() => window.location.href = '/'}>Start New Chat</Button>
             </CardContent>
           </Card>
         ) : (
@@ -245,6 +242,7 @@ export default function History() {
                   <Card
                     key={chat.id}
                     className="hover:shadow-md transition-shadow cursor-pointer group"
+                    onClick={() => handleChatClick(chat)}
                   >
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
@@ -267,12 +265,16 @@ export default function History() {
                               variant="ghost"
                               size="icon"
                               className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <MoreVertical className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => toggleStar(chat.id)}>
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
+                              toggleStar(chat.id);
+                            }}>
                               {chat.starred ? (
                                 <>
                                   <StarOff className="w-4 h-4 mr-2" />
@@ -288,7 +290,10 @@ export default function History() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-red-600"
-                              onClick={() => confirmDelete(chat.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                confirmDelete(chat.id);
+                              }}
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Delete Chat
