@@ -11,7 +11,7 @@ from fastapi import HTTPException
 from irrigation import BoundingBox
 from fastapi import APIRouter, Query
 
-# Initialize Earth Engine (call this once when your app starts)
+# AI was used to help write this file to validate logic and do error handling
 try:
     ee.Initialize()
 except Exception as e:

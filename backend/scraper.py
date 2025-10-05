@@ -95,8 +95,6 @@ def _validate_sentinel_credentials():
 
 _validate_sentinel_credentials()
 
-
-# === Shared helpers ===
 class BoundingBox(BaseModel):
     min_lon: float
     min_lat: float
@@ -162,9 +160,7 @@ async def post_process_api(evalscript: str, bbox: BoundingBox, from_time: str, t
             prof = ds.profile
     return arr, prof
 
-# -------------------------
-# 🌳 1. GLAD-style deforestation (NDVI/NBR differencing)
-# -------------------------
+# AI was used to help write this function to validate logic and suggest improvements
 @router.post("/deforestation")
 async def deforestation_monitor(
     bbox: BoundingBox,

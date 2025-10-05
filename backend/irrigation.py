@@ -50,6 +50,7 @@ def bbox_to_geojson_polygon(bbox: BoundingBox) -> Dict[str, Any]:
         ]]
     }
 
+# AI was used to help write this function to validate logic and suggest improvements
 async def post_process_api(evalscript: str, bbox: BoundingBox, from_time: str, to_time: str,
                            width: int = 512, height: int = 512, collection: str = "sentinel-1-grd"):
     """
@@ -89,9 +90,6 @@ async def post_process_api(evalscript: str, bbox: BoundingBox, from_time: str, t
             prof = ds.profile
     return arr, prof
 
-# -----------------------
-# Evalscript: Sentinel-1 GRD -> return VV and VH as linear backscatter
-# -----------------------
 S1_EVALSCRIPT = """
 //VERSION=3
 function setup() {
@@ -105,9 +103,6 @@ function evaluatePixel(sample) {
 }
 """
 
-# -----------------------
-# Evalscript: Sentinel-2 -> return Green (B03) and NIR (B08) reflectance
-# -----------------------
 S2_EVALSCRIPT = """
 //VERSION=3
 function setup() {
