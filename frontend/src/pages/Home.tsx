@@ -163,14 +163,13 @@ export default function Home() {
 
       localStorage.removeItem('chatMessages');
 
-      // Navigate immediately with the message
+      // Navigate immediately 
       navigate('/chat', {
         state: {
           initialMessage: userMessage
         }
       });
 
-      // Send API request in background
       try {
         const response = await fetch('http://localhost:8000/api/chat', {
           method: 'POST',
@@ -190,7 +189,6 @@ export default function Home() {
 
         const data = await response.json();
 
-        // Update the chat page with the response via navigation state
         navigate('/chat', {
           state: {
             initialMessage: userMessage,
@@ -200,7 +198,6 @@ export default function Home() {
         });
       } catch (error) {
         console.error('Error sending message:', error);
-        // Navigate with error state
         navigate('/chat', {
           state: {
             initialMessage: userMessage,

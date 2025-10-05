@@ -1,6 +1,6 @@
 // AI was used to help write this function to validate logic and suggest improvements
-import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Search, Calendar, Trash2, MoreVertical, Star, StarOff, Upload } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MessageSquare, Search, Calendar, Trash2, MoreVertical, Star, StarOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -93,13 +93,12 @@ export default function History() {
   }, {});
 
   const toggleStar = async (id) => {
-    // Update locally first for immediate feedback
     const updatedChats = chats.map(chat =>
       chat.id === id ? { ...chat, starred: !chat.starred } : chat
     );
     setChats(updatedChats);
 
-    // Save to backend
+    // Save 
     try {
       await fetch('http://localhost:8000/api/chat-history', {
         method: 'POST',
@@ -117,13 +116,12 @@ export default function History() {
 
   const deleteChat = async () => {
     try {
-      // Delete from backend
+      // Delete 
       const response = await fetch(`http://localhost:8000/api/chat-history/${deleteId}`, {
         method: 'DELETE'
       });
 
       if (response.ok) {
-        // Update local state
         setChats(chats.filter(chat => chat.id !== deleteId));
       }
     } catch (error) {

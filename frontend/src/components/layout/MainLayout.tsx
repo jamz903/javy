@@ -37,7 +37,7 @@ export default function MainLayout(): JSX.Element {
 
   return (
     <div className="relative w-full min-h-screen">
-      {/* Dimming Overlay */}
+      {/* Overlay */}
       <div
         className={`fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 z-10 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
           }`}

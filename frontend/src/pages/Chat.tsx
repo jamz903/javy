@@ -9,7 +9,7 @@ import { useLocation } from 'react-router';
 
 export default function Chat() {
   const location = useLocation();
-  const { initialMessage, initialResponse, error, newChat, loadedChat, chatId } = location.state || {};
+  const { initialMessage, initialResponse, error, loadedChat, chatId } = location.state || {};
 
   const [chatHistory, setChatHistory] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(chatId || null);
