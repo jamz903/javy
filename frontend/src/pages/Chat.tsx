@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Satellite, User, Bot, ChevronDown, ChevronUp, AlertCircle, CheckCircle, Info, BarChart3 } from 'lucide-react';
+import { Send, Satellite, User, Bot, ChevronDown, ChevronUp, AlertCircle, CheckCircle, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -641,12 +641,288 @@ export default function Chat() {
       </>
     );
   }
+
   const renderUrbanHeat = (apiResults) => {
+    const tempAnalysis = apiResults.temperature_analysis;
+    const vegAnalysis = apiResults.vegetation_analysis;
+    const dataQuality = apiResults.data_quality;
+    const processingInfo = apiResults.processing_info;
+
+    const heatPercent = (tempAnalysis.urban_heat_fraction * 100).toFixed(1);
+    const coolPercent = (100 - parseFloat(heatPercent)).toFixed(1);
+
+    const tempRange = tempAnalysis.max_temperature_c - tempAnalysis.min_temperature_c;
+    const meanPosition = ((tempAnalysis.mean_temperature_c - tempAnalysis.min_temperature_c) / tempRange) * 100;
+    const thresholdPosition = ((tempAnalysis.heat_threshold_c - tempAnalysis.min_temperature_c) / tempRange) * 100;
+
     return (
       <>
+        <SummaryStatsCards stats={[
+          { value: `${tempAnalysis.mean_temperature_c.toFixed(1)}°C`, label: 'Mean Temperature' },
+          { value: `${heatPercent}%`, label: 'Urban Heat Islands' },
+          { value: vegAnalysis.vegetation_health.toUpperCase(), label: 'Vegetation Health' }
+        ]} />
+
+        {/* Urban Heat Island Circular Gauge */}
+        <div className="bg-white rounded-lg p-6 border border-green-200">
+          <h4 className="text-sm font-semibold text-slate-800 mb-4">Urban Heat Island Distribution</h4>
+          <div className="space-y-6">
+            <div className="flex items-center justify-center">
+              <div className="relative w-64 h-64">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 200 200">
+                  <circle cx="100" cy="100" r="80" fill="none" stroke="#e2e8f0" strokeWidth="20" />
+                  <circle cx="100" cy="100" r="80" fill="none" stroke="url(#coolGradient)" strokeWidth="20" strokeDasharray={`${parseFloat(coolPercent) * 5.03} ${500 - parseFloat(coolPercent) * 5.03}`} strokeLinecap="round" />
+                  <circle cx="100" cy="100" r="80" fill="none" stroke="url(#heatGradient)" strokeWidth="20" strokeDasharray={`${parseFloat(heatPercent) * 5.03} ${500 - parseFloat(heatPercent) * 5.03}`} strokeDashoffset={`-${parseFloat(coolPercent) * 5.03}`} strokeLinecap="round" />
+                  <defs>
+                    <linearGradient id="coolGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#06b6d4" />
+                      <stop offset="100%" stopColor="#10b981" />
+                    </linearGradient>
+                    <linearGradient id="heatGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#f97316" />
+                      <stop offset="100%" stopColor="#ef4444" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="text-5xl font-bold text-orange-600">{heatPercent}%</div>
+                  <div className="text-sm text-slate-600 mt-1">Heat Islands</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gradient-to-br from-cyan-50 to-green-50 rounded-lg p-4 border-2 border-cyan-400">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-4 h-4 bg-gradient-to-r from-cyan-400 to-green-400 rounded-full"></div>
+                  <span className="text-xs font-semibold text-slate-700">Cooler Areas</span>
+                </div>
+                <div className="text-2xl font-bold text-cyan-700">{coolPercent}%</div>
+                <div className="text-xs text-slate-600 mt-1">Below heat threshold</div>
+              </div>
+              <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-4 border-2 border-orange-500">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-4 h-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-full"></div>
+                  <span className="text-xs font-semibold text-slate-700">Heat Islands</span>
+                </div>
+                <div className="text-2xl font-bold text-orange-700">{heatPercent}%</div>
+                <div className="text-xs text-slate-600 mt-1">Above {tempAnalysis.heat_threshold_c.toFixed(2)}°C</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Temperature Distribution Thermometer */}
+        <div className="bg-white rounded-lg p-6 border border-green-200">
+          <h4 className="text-sm font-semibold text-slate-800 mb-4">Temperature Distribution Analysis</h4>
+          <div className="space-y-6">
+            <div className="relative">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-slate-700">Temperature Range</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-600">±{tempAnalysis.temperature_std_c.toFixed(2)}°C std</span>
+                </div>
+              </div>
+
+              <div className="relative h-32 bg-gradient-to-r from-blue-200 via-yellow-200 to-red-300 rounded-lg p-4 overflow-hidden">
+                {/* Min temperature marker */}
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600">
+                  <div className="absolute -left-2 top-1/2 -translate-y-1/2">
+                    <div className="w-5 h-5 bg-blue-600 rounded-full border-2 border-white shadow-lg"></div>
+                  </div>
+                  <div className="absolute left-2 top-1/2 -translate-y-1/2 whitespace-nowrap">
+                    <div className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg">
+                      {tempAnalysis.min_temperature_c.toFixed(2)}°C
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mean temperature marker */}
+                <div className="absolute top-0 bottom-0 w-1 bg-orange-600" style={{ left: `${meanPosition}%` }}>
+                  <div className="absolute -left-2 top-1/2 -translate-y-1/2">
+                    <div className="w-5 h-5 bg-orange-600 rounded-full border-2 border-white shadow-lg"></div>
+                  </div>
+                  <div className="absolute left-2 top-1/2 -translate-y-1/2 whitespace-nowrap">
+                    <div className="bg-orange-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg">
+                      Mean: {tempAnalysis.mean_temperature_c.toFixed(2)}°C
+                    </div>
+                  </div>
+                </div>
+
+                {/* Threshold marker */}
+                <div className="absolute top-0 bottom-0 w-1 bg-red-600" style={{ left: `${thresholdPosition}%` }}>
+                  <div className="absolute -left-2 top-1/2 -translate-y-1/2">
+                    <div className="w-5 h-5 bg-red-600 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
+                  </div>
+                  <div className="absolute left-2 top-8 whitespace-nowrap">
+                    <div className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg">
+                      Threshold: {tempAnalysis.heat_threshold_c.toFixed(2)}°C
+                    </div>
+                  </div>
+                </div>
+
+                {/* Max temperature marker */}
+                <div className="absolute right-0 top-0 bottom-0 w-1 bg-red-700">
+                  <div className="absolute -right-2 top-1/2 -translate-y-1/2">
+                    <div className="w-5 h-5 bg-red-700 rounded-full border-2 border-white shadow-lg"></div>
+                  </div>
+                  <div className="absolute right-2 bottom-4 whitespace-nowrap">
+                    <div className="bg-red-700 text-white text-xs font-bold px-2 py-1 rounded shadow-lg">
+                      {tempAnalysis.max_temperature_c.toFixed(2)}°C
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Temperature statistics cards */}
+            <div className="grid grid-cols-4 gap-3">
+              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200 text-center">
+                <div className="text-xl font-bold text-blue-700">{tempAnalysis.min_temperature_c.toFixed(1)}°C</div>
+                <div className="text-xs text-slate-600 mt-1">Min</div>
+              </div>
+              <div className="bg-orange-50 rounded-lg p-3 border border-orange-200 text-center">
+                <div className="text-xl font-bold text-orange-700">{tempAnalysis.mean_temperature_c.toFixed(1)}°C</div>
+                <div className="text-xs text-slate-600 mt-1">Mean</div>
+              </div>
+              <div className="bg-red-50 rounded-lg p-3 border border-red-200 text-center">
+                <div className="text-xl font-bold text-red-700">{tempAnalysis.max_temperature_c.toFixed(1)}°C</div>
+                <div className="text-xs text-slate-600 mt-1">Max</div>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-3 border border-purple-200 text-center">
+                <div className="text-xl font-bold text-purple-700">{tempRange.toFixed(2)}°C</div>
+                <div className="text-xs text-slate-600 mt-1">Range</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Vegetation Health Indicator */}
+        <div className="bg-white rounded-lg p-6 border border-green-200">
+          <h4 className="text-sm font-semibold text-slate-800 mb-4">Vegetation & Green Cover Analysis</h4>
+          <div className="space-y-4">
+            <div className={`relative overflow-hidden rounded-lg p-6 border-2 ${vegAnalysis.vegetation_health === 'low'
+              ? 'bg-gradient-to-br from-red-50 to-orange-50 border-red-400'
+              : vegAnalysis.vegetation_health === 'medium'
+                ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-400'
+                : 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-400'
+              }`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-slate-600 uppercase mb-1">Vegetation Health Status</div>
+                  <div className={`text-4xl font-bold ${vegAnalysis.vegetation_health === 'low'
+                    ? 'text-red-700'
+                    : vegAnalysis.vegetation_health === 'medium'
+                      ? 'text-yellow-700'
+                      : 'text-green-700'
+                    }`}>
+                    {vegAnalysis.vegetation_health.toUpperCase()}
+                  </div>
+                </div>
+                <div className="w-20 h-20 rounded-full bg-white bg-opacity-50 flex items-center justify-center">
+                  <svg className={`w-12 h-12 ${vegAnalysis.vegetation_health === 'low'
+                    ? 'text-red-600'
+                    : vegAnalysis.vegetation_health === 'medium'
+                      ? 'text-yellow-600'
+                      : 'text-green-600'
+                    }`} fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-white border-opacity-50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-slate-700">Mean NDVI</span>
+                  <span className="text-2xl font-bold text-slate-800">{vegAnalysis.mean_ndvi.toFixed(3)}</span>
+                </div>
+                <div className="w-full bg-white bg-opacity-50 rounded-full h-3">
+                  <div
+                    className={`h-3 rounded-full ${vegAnalysis.vegetation_health === 'low'
+                      ? 'bg-gradient-to-r from-red-500 to-red-600'
+                      : vegAnalysis.vegetation_health === 'medium'
+                        ? 'bg-gradient-to-r from-yellow-500 to-yellow-600'
+                        : 'bg-gradient-to-r from-green-500 to-green-600'
+                      }`}
+                    style={{ width: `${(vegAnalysis.mean_ndvi / 1) * 100}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-slate-600 mt-1">
+                  <span>0.0 (No vegetation)</span>
+                  <span>1.0 (Healthy vegetation)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Data Quality & Processing Info */}
+        <div className="bg-white rounded-lg p-6 border border-green-200">
+          <h4 className="text-sm font-semibold text-slate-800 mb-4">Data Quality & Source Information</h4>
+          <div className="space-y-4">
+            {/* Coverage visualization */}
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-slate-700">Data Coverage</span>
+                <span className="text-2xl font-bold text-blue-700">{dataQuality.coverage_percentage}%</span>
+              </div>
+              <div className="w-full bg-white rounded-full h-4 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-4 flex items-center justify-center"
+                  style={{ width: `${dataQuality.coverage_percentage}%` }}
+                >
+                  <span className="text-xs font-bold text-white">Complete Coverage</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <div className="text-center">
+                  <div className="text-xs text-slate-600">Valid Pixels</div>
+                  <div className="text-lg font-bold text-slate-800">{dataQuality.valid_pixels}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-slate-600">Cloud Cover</div>
+                  <div className="text-lg font-bold text-slate-800">{dataQuality.cloud_cover}%</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Source information */}
+            <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+              <div className="space-y-2 text-sm">
+                <div className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-slate-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <div className="font-semibold text-slate-700">Data Source</div>
+                    <div className="text-slate-600">{processingInfo.data_source}</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-slate-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <div className="font-semibold text-slate-700">Image Date</div>
+                    <div className="text-slate-600">{dataQuality.image_date}</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-slate-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <div className="font-semibold text-slate-700">Spatial Resolution</div>
+                    <div className="text-slate-600">{processingInfo.spatial_resolution}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </>
     );
-  }
+  };
 
   const renderVisualization = (apiUsed, apiResults) => {
     console.log(apiResults)
@@ -669,14 +945,6 @@ export default function Chat() {
     const apiResults = data.api_results;
     const apiUsed = analysis?.technical_context?.api_used;
     const responseText = data.response || '';
-
-    if (!analysis && !responseText && data.metadata?.understanding) {
-      return (
-        <div className="text-md text-slate-700 leading-relaxed">
-          {formatText(data.metadata.understanding)}
-        </div>
-      );
-    }
 
     if (!analysis) {
       return <div className="text-md text-slate-700 leading-relaxed">{formatText(responseText)}</div>;
