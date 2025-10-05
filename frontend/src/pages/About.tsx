@@ -94,7 +94,7 @@ export default function About() {
       < div className="border-b bg-white" >
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center gap-3 mb-2">
-            <Satellite className="w-8 h-8 text-blue-600" />
+            <Users className="w-8 h-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-slate-900">About Us</h1>
           </div>
           <p className="text-slate-600">Making satellite intelligence accessible for everyone</p>
