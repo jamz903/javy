@@ -12,7 +12,7 @@ In this hackathon, we utilised [Google Earth Engine](https://earthengine.google.
 
 We also used a 3D model of a [Space Station by Gerardo Justel](https://www.fab.com/listings/9042d765-4f32-4ef3-892a-aca6c14f8f60) for our frontend that falls under the [Creative Commons License](https://creativecommons.org/licenses/by/4.0/).
 
-To formulate our business proposal, we utilised the [Space Commercialization NASA resources](https://www.nasa.gov/headquarters/library/find/bibliographies/space-commercialization/). More information can be found in our powerpoint slide deck also found in this repository .
+To formulate our business proposal, we utilised the [Space Commercialization NASA resources](https://www.nasa.gov/headquarters/library/find/bibliographies/space-commercialization/). More information can be found in our powerpoint slide deck found [here](https://docs.google.com/presentation/d/11sB7GojJ_WaUlz6woZhYSffMpOjOqnDS/edit?usp=share_link&ouid=102894135391576057817&rtpof=true&sd=true).
 
 We utilised AI during the process. When used, it is attributed in the form of a comment either at the top of the file or above the function.
 
