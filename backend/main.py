@@ -496,7 +496,7 @@ When API results are included in the response, you MUST provide a comprehensive,
    - Agriculture: Are crops healthy/stressed? Is irrigation present? Water changes?
 
 6. **Assess Confidence and Quality**:
-   - Confidence scores/fractions
+   - Confidence scores/fractions - NOTE: be as clear as possible, call it change fraction, detection confidence, etc.
    - Resolution and area analyzed
    - Any data quality indicators
    - Seasonal or weather-related caveats
@@ -523,6 +523,8 @@ When API results are included in the response, you MUST provide a comprehensive,
 - **Confidence/Fraction**: How certain the analysis is (0-1 or 0-100%)
 - **Area metrics**: Convert to relatable units (football fields, city blocks)
 - **Pixel counts**: Relate to actual ground area
+- "confidence_fraction" in API responses should be explained as "detection coverage" or "affected area fraction"
+- When discussing this metric, always clarify: "The value labeled 'confidence_fraction' represents the proportion of the analyzed area where changes exceeded detection thresholds, NOT a measure of statistical confidence"
 
 ### Response Format:
 
