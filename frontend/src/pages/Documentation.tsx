@@ -33,13 +33,11 @@ const parseOpenAPISpec = (spec) => {
         };
       }
 
-      // Extract parameters
       const params = [];
       if (details.parameters) {
         params.push(...details.parameters.map(p => p.name));
       }
 
-      // Extract request body properties
       const requestBodySchema = details.requestBody?.content?.['application/json']?.schema;
       if (requestBodySchema) {
         if (requestBodySchema.$ref) {
@@ -51,10 +49,8 @@ const parseOpenAPISpec = (spec) => {
         }
       }
 
-      // Build example curl command
       let example = `curl -X ${method.toUpperCase()} "http://localhost:8000${path}`;
 
-      // Add query parameters to example
       const queryParams = details.parameters?.filter(p => p.in === 'query') || [];
       if (queryParams.length > 0) {
         const exampleParams = queryParams.map(p => {
@@ -71,7 +67,6 @@ const parseOpenAPISpec = (spec) => {
 
       example += '"';
 
-      // Add request body to example
       if (requestBodySchema) {
         example += ` \\\n  -H "Content-Type: application/json"`;
         if (requestBodySchema.$ref?.includes('BoundingBox')) {
@@ -83,11 +78,14 @@ const parseOpenAPISpec = (spec) => {
         }
       }
 
+      let description = details.description || details.summary || 'No description available';
+      description = description.trim();
+
       sources[tag].endpoints.push({
         id: endpointId++,
         method: method.toUpperCase(),
         endpoint: path,
-        description: details.description || details.summary || 'No description available',
+        description,
         params: [...new Set(params)],
         example
       });
@@ -107,6 +105,8 @@ export default function Documentation() {
   const [copiedId, setCopiedId] = useState(null);
   const [testRequest, setTestRequest] = useState('');
   const [testResponse, setTestResponse] = useState('');
+  const [testLoading, setTestLoading] = useState(false);
+  const [testError, setTestError] = useState(null);
 
   useEffect(() => {
     const fetchAPISpec = async () => {
@@ -119,7 +119,6 @@ export default function Documentation() {
 
         setDataSources(sources);
 
-        // Set first endpoint as selected and open first source
         if (sources.length > 0 && sources[0].endpoints.length > 0) {
           setSelectedEndpoint(sources[0].endpoints[0]);
           setOpenSources({ [sources[0].id]: true });
@@ -163,6 +162,47 @@ export default function Documentation() {
       PATCH: 'bg-purple-500'
     };
     return colors[method] || 'bg-gray-500';
+  };
+
+  const sendTestRequest = async () => {
+    if (!selectedEndpoint) return;
+
+    setTestLoading(true);
+    setTestError(null);
+    setTestResponse('');
+
+    try {
+      const url = `http://localhost:8000${selectedEndpoint.endpoint}`;
+      const options = {
+        method: selectedEndpoint.method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+
+      if (['POST', 'PUT', 'PATCH'].includes(selectedEndpoint.method) && testRequest) {
+        try {
+          JSON.parse(testRequest);
+          options.body = testRequest;
+        } catch (e) {
+          throw new Error('Invalid JSON in request body');
+        }
+      }
+
+      const response = await fetch(url, options);
+      const data = await response.json();
+
+      setTestResponse(JSON.stringify(data, null, 2));
+
+      if (!response.ok) {
+        setTestError(`Request failed with status ${response.status}`);
+      }
+    } catch (err) {
+      setTestError(err.message);
+      setTestResponse(JSON.stringify({ error: err.message }, null, 2));
+    } finally {
+      setTestLoading(false);
+    }
   };
 
   return (
@@ -277,7 +317,7 @@ export default function Documentation() {
                         </Badge>
                         <CardTitle className="font-mono text-xl">{selectedEndpoint.endpoint}</CardTitle>
                       </div>
-                      <CardDescription className="mt-2">{selectedEndpoint.description}</CardDescription>
+                      <CardDescription className="mt-2 whitespace-pre-wrap">{selectedEndpoint.description}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div>
@@ -319,33 +359,48 @@ export default function Documentation() {
                       <CardDescription>Send a request and view the response</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium text-slate-700 mb-2 block">
-                          Request Body (JSON)
-                        </label>
-                        <Textarea
-                          placeholder='{"key": "value"}'
-                          value={testRequest}
-                          onChange={(e) => setTestRequest(e.target.value)}
-                          className="font-mono text-sm min-h-[120px]"
-                        />
-                      </div>
+                      {testError && (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>{testError}</AlertDescription>
+                        </Alert>
+                      )}
 
-                      <Button className="w-full" onClick={() => setTestResponse('{\n  "status": "success",\n  "message": "This is a demo response",\n  "data": {}\n}')}>
-                        Send Request
+                      {['POST', 'PUT', 'PATCH'].includes(selectedEndpoint.method) && (
+                        <div>
+                          <label className="text-sm font-medium text-slate-700 mb-2 block">
+                            Request Body (JSON)
+                          </label>
+                          <Textarea
+                            placeholder='{"key": "value"}'
+                            value={testRequest}
+                            onChange={(e) => setTestRequest(e.target.value)}
+                            className="font-mono text-sm min-h-[120px]"
+                          />
+                        </div>
+                      )}
+
+                      <Button
+                        className="w-full"
+                        onClick={sendTestRequest}
+                        disabled={testLoading}
+                      >
+                        {testLoading ? 'Sending...' : 'Send Request'}
                       </Button>
 
-                      <div>
-                        <label className="text-sm font-medium text-slate-700 mb-2 block">
-                          Response
-                        </label>
-                        <Textarea
-                          placeholder="Response will appear here..."
-                          value={testResponse}
-                          readOnly
-                          className="font-mono text-sm min-h-[120px] bg-slate-50"
-                        />
-                      </div>
+                      {testResponse && (
+                        <div>
+                          <label className="text-sm font-medium text-slate-700 mb-2 block">
+                            Response
+                          </label>
+                          <Textarea
+                            placeholder="Response will appear here..."
+                            value={testResponse}
+                            readOnly
+                            className="font-mono text-sm min-h-[120px] bg-slate-50"
+                          />
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </>

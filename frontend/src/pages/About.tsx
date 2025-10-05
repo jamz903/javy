@@ -219,7 +219,7 @@ export default function About() {
           <CardHeader>
             <CardTitle className="text-white text-2xl">Ready to Get Started?</CardTitle>
             <CardDescription className="text-blue-100">
-              Join thousands of developers and researchers using our platform
+              Join the developers and researchers using our platform
             </CardDescription>
           </CardHeader>
           <CardContent className="flex gap-3">
