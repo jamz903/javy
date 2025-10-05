@@ -11,7 +11,8 @@ Provides an interface for querying satellite data endpoints and visualizing real
 
 ## prerequisites
 
-- Node.js 18+ and npm 9+
+- should work on Node.js 18+ and npm 9+
+  - but NOTE: tested on Node 24.8.9 and npm 11.6.1
 - Modern browser with WebGL support
 
 ## steps to get started
@@ -27,7 +28,7 @@ npm run dev
 
 # for prod
 npm run build
-npm un preview
+npm run preview
 ```
 
 ## features

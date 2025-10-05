@@ -1,6 +1,7 @@
 # LEONA
 
-## What is LEONA? 
+## What is LEONA?
+
 LEONA democratizes access to LEO satellite data by bridging the gap between complex space infrastructure and everyday users. Our platform uses an ML-powered natural language interface that translates plain-language queries into API calls to a custom backend API we developed that retrieves data from LEO satellites (Sentinel-1, Sentinel-2, Landsat 8/9), performs automated analysis, and feeds into our ML model—trained on real satellite data and engineered to return structured, actionable outputs rather than typical conversational responses. This translation layer converts plain-language queries into API calls and transforms complex data into ready-to-use formats, removing technical barriers for non-experts. Built as an extensible, open-source platform, our API enables developers to expand functionality while maintaining accessibility. Operating on a freemium model—free for individuals, enterprise subscriptions for businesses—we target agriculture and sustainability compliance as beachhead markets. LEONA scales the commercial value of existing LEO infrastructure by democratizing data access, demonstrating how purpose-built technology and accessible business models can drive responsible Earth observation applications and contribute to the long-term economic viability of the LEO ecosystem.
 Introducing our NASA Space Hackathon 2025 Submission.
 
@@ -17,33 +18,38 @@ To formulate our business proposal, we utilised the [Space Commercialization NAS
 We utilised AI during the process. When used, it is attributed in the form of a comment either at the top of the file or above the function.
 
 ## Setting Up
+
 ### Prerequisites
 
 Before you begin, ensure you have the following installed:
+
 - [nvm (Node Version Manager)](https://github.com/nvm-sh/nvm#installing-and-updating)
 - [uv (Python package manager)](https://docs.astral.sh/uv/getting-started/installation/)
 - Git
 
-
 ### Frontend Setup
 
 1. Navigate to the frontend directory:
+
    ```bash
    cd frontend
    ```
 
 2. Install and use Node.js 24:
+
    ```bash
    nvm install 24
    nvm use 24
    ```
 
 3. Install dependencies:
+
    ```bash
    npm i
    ```
 
 4. Start the development server:
+
    ```bash
    npm run dev
    ```
@@ -53,11 +59,13 @@ Before you begin, ensure you have the following installed:
 ### Backend Setup
 
 1. Navigate to the backend directory:
+
    ```bash
    cd backend
    ```
 
 2. Create your environment file:
+
    ```bash
    cp .sample.env .env
    ```
@@ -67,7 +75,7 @@ Before you begin, ensure you have the following installed:
    - See the `.sample.env` file for required keys
 
 4. **Google Earth Engine Authentication:**
-   
+
    You need to create a Google Cloud project and enable the Earth Engine API.
    For a seamless experience, we suggest that you set it up manually:
    - Go to [Google Earth Engine](https://code.earthengine.google.com/)
@@ -75,16 +83,19 @@ Before you begin, ensure you have the following installed:
    - Follow the authentication prompts
 
 5. Install the uv package manager if you haven't already:
+
    ```bash
    curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
-   
+
    Or on Windows:
+
    ```powershell
    powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
    ```
 
 6. Start the backend server:
+
    ```bash
    uv run fastapi run
    ```
@@ -98,10 +109,12 @@ Once both servers are running, you can access the application through your brows
 ## Troubleshooting
 
 ### Frontend Issues
+
 - Make sure you're using Node.js 24: `node --version`
 - Clear node_modules and reinstall: `rm -rf node_modules && npm i`
 
 ### Backend Issues
+
 - Verify all API keys are correctly set in `.env`
 - Ensure Google Earth Engine is properly authenticated
 - Check that uv is installed: `uv --version`
@@ -109,8 +122,11 @@ Once both servers are running, you can access the application through your brows
 ## Platform Notes
 
 This setup works on:
+
 - **Linux**: Follow commands as written
+- **MacOS**: Follow commands as written
 - **Windows**: Untested
 
 ## Demo of Product
+
 View our Full Product Walkthrough [here](https://youtu.be/N1v4GvBZzVQ)
