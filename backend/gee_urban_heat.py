@@ -137,10 +137,25 @@ async def get_landsat_urban_heat_gee(
         total_valid = np.sum(valid_mask)
         heat_fraction = float(heat_pixels / total_valid) if total_valid > 0 else 0.0
         
-        # Calculate area statistics
-        bbox_area = (bbox['max_lon'] - bbox['min_lon']) * (bbox['max_lat'] - bbox['min_lat'])
-        pixel_area = 30 * 30  # 30m x 30m Landsat pixels
-        estimated_total_pixels = int((bbox_area * 111000 * 111000) / pixel_area)  # rough estimate
+        # Calculate area statistics with safety checks
+        bbox_width = abs(bbox['max_lon'] - bbox['min_lon'])
+        bbox_height = abs(bbox['max_lat'] - bbox['min_lat'])
+        bbox_area = bbox_width * bbox_height
+        
+        # Calculate estimated total pixels with safety check
+        pixel_area = 30 * 30  # 30m x 30m Landsat pixels in m²
+        # Convert degrees to meters (approximate)
+        meters_per_degree = 111000  # at equator
+        bbox_area_m2 = bbox_area * meters_per_degree * meters_per_degree
+        estimated_total_pixels = max(1, int(bbox_area_m2 / pixel_area))  # Ensure at least 1
+        
+        # Calculate coverage percentage with safety check
+        coverage_percentage = round(
+            (valid_pixels / estimated_total_pixels) * 100, 1
+        ) if estimated_total_pixels > 0 else 0.0
+        
+        # Cap at 100% (can happen due to approximations)
+        coverage_percentage = min(coverage_percentage, 100.0)
         
         return {
             "temperature_analysis": {
@@ -162,7 +177,7 @@ async def get_landsat_urban_heat_gee(
             "data_quality": {
                 "valid_pixels": int(valid_pixels),
                 "total_pixels": estimated_total_pixels,
-                "coverage_percentage": round((valid_pixels / estimated_total_pixels) * 100, 1),
+                "coverage_percentage": coverage_percentage,
                 "collection": "landsat-8-9-c2-l2",
                 "image_date": image_date,
                 "cloud_cover": round(float(image.get('CLOUD_COVER').getInfo()), 1)

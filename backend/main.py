@@ -472,6 +472,20 @@ When API results are included in the response, you MUST provide a comprehensive,
 }
 
 **CRITICAL: Never return an empty "response" field. If no APIs match, use the opportunity to educate about satellite data applications.**
+
+**For follow-up questions or explanations (no new API recommendation needed):**
+{
+  "response": "Your detailed explanation or answer to the user's question. This should be comprehensive and directly address what they asked about.",
+  "understanding": "What the user is asking about",
+  "confidence_level": "high",
+  "is_followup": true,
+  "context": "Reference to previous conversation context if relevant"
+}
+
+## Response Type Detection:
+- **New query requiring API recommendation**: Use the "If you CAN extract/infer" format
+- **Follow-up explanation/clarification**: Use the "For follow-up questions" format with detailed response
+- **API results provided**: Use the "If API RESULTS ARE PROVIDED" format
 """
 
 # Request/Response models
