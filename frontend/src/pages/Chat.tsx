@@ -966,7 +966,7 @@ export default function Chat() {
           </Card>
         )}
 
-        {(analysis?.limitations || hasAlternativeApplications || data.metadata?.alternative_applications != []) && (
+        {(analysis?.limitations || hasAlternativeApplications || data.metadata?.alternative_applications.length != 0) && (
           <Card className="bg-purple-50 border-purple-200">
             <CardContent className="pt-4">
               <button
@@ -994,7 +994,7 @@ export default function Chat() {
                       </div>
                     </div>
                   )}
-                  {hasAlternativeApplications && data.metadata?.alternative_applications != [] && (
+                  {hasAlternativeApplications && data.metadata?.alternative_applications.length != 0 && (
                     <div className={analysis?.limitations ? "pt-4 border-t border-purple-200" : ""}>
                       <h4 className="text-sm font-semibold text-slate-800 mb-2">Alternative Applications</h4>
                       <div className="text-sm text-slate-700 leading-relaxed space-y-4">
