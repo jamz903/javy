@@ -15,8 +15,6 @@ from datetime import date, datetime, timedelta
 import logging
 
 logger = logging.getLogger(__name__)
-
-# Initialize FastAPI
 load_dotenv()
 app = FastAPI(title="LEONA API", version="1.0.0")
 app.include_router(satellite_router)

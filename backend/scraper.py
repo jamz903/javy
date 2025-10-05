@@ -20,15 +20,9 @@ except Exception as e:
     print("Run 'earthengine authenticate' in terminal first")
 
 router = APIRouter(prefix="/satellite", tags=["satellite"])
-
-# --- Load environment variables ---
 load_dotenv()
-
-# --- Sentinel Hub config ---
 SENTINEL_HUB_OAUTH = "https://services.sentinel-hub.com/oauth/token"
 SENTINEL_HUB_PROCESS = os.getenv("SENTINEL_HUB_PROCESS", "https://services.sentinel-hub.com/api/v1/process")
-
-# Sentinel Hub credentials with fallback
 SENTINEL_CREDS = [
     (os.getenv("SENTINEL_HUB_CLIENT_ID"), os.getenv("SENTINEL_HUB_CLIENT_SECRET")),
     (os.getenv("SENTINEL_HUB_CLIENT_ID_ALT"), os.getenv("SENTINEL_HUB_CLIENT_SECRET_ALT")),

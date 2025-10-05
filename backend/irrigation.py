@@ -13,8 +13,6 @@ from dotenv import load_dotenv
 import json
 
 router = APIRouter(prefix="/irrigation", tags=["irrigation"])
-
-# Config / endpoints (adjust if you use a custom Sentinel Hub instance)
 load_dotenv()
 SENTINEL_HUB_OAUTH = os.getenv("SENTINEL_HUB_OAUTH", "https://services.sentinel-hub.com/oauth/token")
 SENTINEL_HUB_PROCESS = os.getenv("SENTINEL_HUB_PROCESS", "https://services.sentinel-hub.com/api/v1/process")
