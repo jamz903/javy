@@ -1,6 +1,6 @@
 # LEONA
 
-## What is LEONA?
+## What is LEONA (Low Earth Orbit Natural-language Analytics)?
 
 LEONA democratizes access to LEO satellite data by bridging the gap between complex space infrastructure and everyday users. Our platform uses an ML-powered natural language interface that translates plain-language queries into API calls to a custom backend API we developed that retrieves data from LEO satellites (Sentinel-1, Sentinel-2, Landsat 8/9), performs automated analysis, and feeds into our ML model—trained on real satellite data and engineered to return structured, actionable outputs rather than typical conversational responses. This translation layer converts plain-language queries into API calls and transforms complex data into ready-to-use formats, removing technical barriers for non-experts. Built as an extensible, open-source platform, our API enables developers to expand functionality while maintaining accessibility. Operating on a freemium model—free for individuals, enterprise subscriptions for businesses—we target agriculture and sustainability compliance as beachhead markets. LEONA scales the commercial value of existing LEO infrastructure by democratizing data access, demonstrating how purpose-built technology and accessible business models can drive responsible Earth observation applications and contribute to the long-term economic viability of the LEO ecosystem.
 Introducing our NASA Space Hackathon 2025 Submission.
